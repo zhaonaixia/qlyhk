@@ -3,6 +3,8 @@ package com.cd.qlyhk.controller;
 
 import com.cd.qlyhk.rest.Response;
 import com.cd.qlyhk.service.AssessService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -16,6 +18,8 @@ import java.util.Map;
 @RequestMapping("/assess")
 public class AssessController {
 
+    private static final Logger logger = LoggerFactory.getLogger(AssessService.class);
+
 
     @Resource(name = AssessService.BEAN_ID)
     private AssessService assessService;
@@ -28,6 +32,7 @@ public class AssessController {
     @RequestMapping("/as.do")
     @ResponseBody
     public Response finalByArticleAndStatistics(@RequestBody Map map){
+        logger.info("*************文章及分享*************");
         Response response = assessService.finalByArticleAndStatistics(map);
         return response;
     }

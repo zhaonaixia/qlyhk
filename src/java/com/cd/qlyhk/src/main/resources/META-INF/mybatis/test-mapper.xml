@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.TestServiceImpl">
+    
+    <select id="query" parameterType="map" resultType="map">
+		<![CDATA[
+			select schema_name as db_nme,default_character_set_name as charset_name from information_schema.schemata
+		]]>
+	</select>
+	
+</mapper>

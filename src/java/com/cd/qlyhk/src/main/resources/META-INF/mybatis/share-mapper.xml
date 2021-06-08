@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.ShareServiceImpl">
+    
+    <insert id="insertRecord" parameterType="com.cd.qlyhk.vo.WxRecordDTO">
+	   	<![CDATA[
+			insert into qly_rh_share_record (share_id, uuid, visitor_id, user_name, headImgUrl, sharer, share_uuid, article_title, article_url, visit_date, read_date) values 
+			(#{share_id},#{uuid},#{visitor_id},#{user_name},#{headImgUrl},#{sharer},#{article_id},#{article_title},#{article_url},SYSDATE(),#{read_date})
+	    ]]>
+	</insert>
+	
+	<insert id="insertRhShare" parameterType="com.cd.qlyhk.vo.ReqShareArticleDTO">
+	   	<![CDATA[
+			insert into qly_rh_share (uuid, article_uuid, article_title, article_url, sharer, source, create_user_id, create_datetime) values 
+			(#{uuid},#{article_id},#{article_title},#{article_url},#{sharer},#{source},0,SYSDATE())
+	    ]]>
+	</insert>
+	
+	<insert id="insertRhShareVO" parameterType="com.cd.qlyhk.vo.QlyRhShareVO" keyProperty="share_id" useGeneratedKeys="true">
+	   	<![CDATA[
+			insert into qly_rh_share (uuid, article_uuid, article_title, article_url, sharer, source, create_user_id, create_datetime, source_share_uuid, share_date) values 
+			(#{uuid},#{article_uuid},#{article_title},#{article_url},#{sharer},#{source},0,SYSDATE(),#{source_share_uuid},#{share_date})
+	    ]]>
+	</insert>
+	
+    <update id="updateRecordQuitDate" parameterType="map">
+		<![CDATA[
+			update qly_rh_share_record set quit_date = #{quit_date}, read_time = #{readTime}  where uuid = #{uuid}
+		]]>
+	</update>
+	
+	<insert id="insertRecordClickArticle" parameterType="com.cd.qlyhk.vo.QlyRhUserClickArticleVO">
+	   	<![CDATA[
+			insert into qly_rh_user_click_article (share_uuid, article_title, sharer, unique_identification, ip_address, create_datetime) values 
+			(#{share_uuid},#{article_title},#{sharer},#{unique_identification},#{ip_address},SYSDATE())
+	    ]]>
+	</insert>
+	
+	<select id="queryRhShare" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhShareVO">
+		<![CDATA[
+			select * from qly_rh_share where uuid = #{shareUuid} LIMIT 1
+		]]>
+	</select>
+	
+	<select id="getRhShareRecord" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhShareRecordVO">
+		<![CDATA[
+			select * from qly_rh_share_record where uuid = #{uuid} LIMIT 1
+		]]>
+	</select>
+	
+	<select id="getArticleShareByArticleUuid" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhShareVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_share
+			WHERE article_uuid = #{articleUuid} AND sharer = #{openId} LIMIT 1
+		]]>
+	</select>
+	
+</mapper>

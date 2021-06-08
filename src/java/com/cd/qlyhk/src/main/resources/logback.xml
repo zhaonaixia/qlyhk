@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<configuration debug="false" scan="true" scanPeriod="60 seconds">
+    <!--全局属性变量定义 -->
+    <property name="project_name" value="qlyhk"/>
+ <!--
+    <property name="log_dir" value="${CATALINA_HOME}/logs/qlyhk"/>
+ -->
+    <property name="log_dir" value="C:/logs/qlyhk"/>
+    <property name="console_log_pattern" value="%date [%thread] %level %L %logger %method:%msg%n" />
+    <property name="log_pattern" value="%date [%thread] %level %logger %method:%msg%n"/>
+    <property name="log_encoding" value="UTF-8"/>
+    <property name="log_file" value="${log_dir}/${project_name}.%d{yyyy-MM-dd}.%i.log"/>
+    <property name="error_file" value="${log_dir}/error/${project_name}.%d{yyyy-MM-dd}.log"/>
+    <property name="max_file_size" value="20MB"/>
+    <!-- 控制台输出 -->
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- <encoding>${log_encoding}</encoding>-->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+        <encoder>
+            <pattern>${console_log_pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <!--日志文件 -->
+    <appender name="log_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- <encoding>${log_encoding}</encoding> -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>${log_file}</FileNamePattern>
+            <MaxHistory>30</MaxHistory>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>${max_file_size}</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log_pattern}</pattern>
+        </encoder>
+    </appender>
+    <!-- 错误日志文件 -->
+    <appender name="error_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- <encoding>${log_encoding}</encoding> -->
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <FileNamePattern>${error_file}</FileNamePattern>
+            <MaxHistory>30</MaxHistory>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${log_pattern}</pattern>
+        </encoder>
+    </appender>
+
+    <!-- 下面配置一些第三方包的日志过滤级别，用于避免刷屏 -->
+    <logger name="org.springframework" level="WARN"/>
+    <logger name="org.apache" level="WARN"/>
+    <logger name="org.mongodb" level="WARN"/>
+    <logger name="org.mybatis" level="DEBUG" />
+    <logger name="java.sql" level="DEBUG" />
+    <logger name="com.cd.qlyhk" level="DEBUG"/>
+    <logger name="org.springframework.session.web.http.SessionRepositoryFilter.SESSION_LOGGER" level="WARN"/>
+    <logger name="org.springframework.data.redis.core" level="WARN"/>
+    <logger name="org.springframework.session.data" level="WARN"/>
+    <logger name="net.sf.ehcache" level="WARN"/>
+    <!--根目录级别设置 -->
+    <root>
+        <appender-ref ref="console"/>
+        <appender-ref ref="log_file"/>
+        <appender-ref ref="error_file"/>
+    </root>
+</configuration>

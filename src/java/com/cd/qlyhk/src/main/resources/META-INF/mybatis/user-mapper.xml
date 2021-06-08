@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.UserServiceImpl">
+    
+    <insert id="insertQlyRhUser" parameterType="com.cd.qlyhk.vo.QlyRhUserVO" keyProperty="user_id" useGeneratedKeys="true">
+	   	<![CDATA[
+			insert into qly_rh_user (openId, headImgUrl, nick_name, user_name, company, position, industry, sex, country, province, city, language, subscribe, 
+			telphone, wechat_number, ewm_url, personal_profile, isMember, create_datetime, register_date, area_code, user_type, recommender, unionid) values 
+			(#{openId},#{headImgUrl},#{nick_name},#{user_name},#{company},#{position},#{industry},#{sex},#{country},#{province},#{city},#{language},#{subscribe},
+			#{telphone},#{wechat_number},#{ewm_url},#{personal_profile},#{isMember},SYSDATE(),#{register_date},#{area_code},#{user_type},#{recommender},#{unionid})
+	    ]]>
+	</insert>
+	
+    <select id="queryQlyRhUser" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhUserVO">
+		<![CDATA[
+			select * from qly_rh_user where openId = #{openId} LIMIT 1
+		]]>
+	</select>
+	
+	<update id="updateUserInfo" parameterType="com.cd.qlyhk.dto.QlyRhUserDTO">
+        update qly_rh_user
+        <set>
+            <if test="ewm_url!=null">ewm_url=#{ewm_url},</if>
+            <if test="user_name!=null">user_name=#{user_name},</if>
+            <if test="telphone!=null">telphone=#{telphone},</if>
+            <if test="position!=null">position=#{position},</if>
+            <if test="company!=null">company=#{company},</if>
+            <if test="industry!=null">industry=#{industry},</if>
+            <if test="city!=null">city=#{city},</if>
+            <if test="area_code!=null">area_code=#{area_code},</if>
+            <if test="subscribe!=null">subscribe=#{subscribe},</if>
+            <if test="personal_profile!=null">personal_profile=#{personal_profile},</if>
+            <if test="isMember!=null">isMember=#{isMember},</if>
+            <if test="open_date!=null">open_date=#{open_date},</if>
+            <if test="headImgUrl!=null">headImgUrl=#{headImgUrl},</if>
+            <if test="member_end_date!=null">member_end_date=#{member_end_date},</if>
+            <if test="unionid!=null">unionid=#{unionid},</if>
+            <if test="modify_datetime!=null">modify_datetime=#{modify_datetime}</if>
+        </set>
+        where openId=#{openId}
+    </update>
+    
+    <update id="updateUserOperateLog" parameterType="map">
+    	update qly_rh_user_operatelog 
+    	<set>
+            <if test="msgType!=null">msg_type=#{msgType},</if>
+            <if test="lastInteractTime!=null">last_interact_time=#{lastInteractTime},</if>
+            <if test="ispush!=null">ispush=#{ispush},</if>
+            <if test="ispush_mr!=null">ispush_mr=#{ispush_mr},</if>
+        </set>
+        where openId = #{openId}
+    </update>
+    
+    <insert id="insertUserOperateLog" parameterType="map">
+	   	<![CDATA[
+			insert into qly_rh_user_operatelog (openId, msg_type, last_interact_time) values (#{openId},#{msgType},SYSDATE())
+	    ]]>
+	</insert>
+	
+	<select id="queryQlyRhUserOperateLog" parameterType="String" resultType="map">
+		<![CDATA[
+			select * from qly_rh_user_operatelog where openId = #{openId}
+		]]>
+	</select>
+	
+	<select id="queryQlyRhUsers" resultType="com.cd.qlyhk.vo.QlyRhUserVO">
+		<![CDATA[
+			select * from qly_rh_user where (IFNULL(openId,'') != '')
+		]]>
+	</select>
+	
+	<select id="queryCancelRestrictUsers" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, o.ispush FROM qly_rh_user u INNER JOIN qly_rh_user_operatelog o ON u.openId = o.openId
+			WHERE o.last_interact_time < STR_TO_DATE(#{dateTime}, '%Y-%m-%d %H:%i:%s')
+		]]>
+	</select>
+	
+	<select id="checkUserNameUnique" parameterType="map" resultType="String">
+		select user_name from qly_rh_user where user_name=#{user_name} and openId != #{openId}
+	</select>
+	
+	<insert id="addCustId" parameterType="map">
+	   	<![CDATA[
+			insert into qly_rh_user_cust (user_id, cust_id) values 
+			(#{user_id}, #{cust_id})
+	    ]]>
+	</insert>
+	
+	<select id="getCustId" parameterType="int" resultType="Integer">
+		<![CDATA[
+			SELECT cust_id FROM qly_rh_user_cust WHERE user_id=#{user_id}
+		]]>
+	</select>
+	
+	<select id="getQlyRhUserVO" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhUserVO">
+		<![CDATA[
+			select * from qly_rh_user where user_type = '2'
+		]]>
+		<if test="loginName!=null"> AND login_name = #{loginName}</if>
+		<if test="password!=null"> AND password = #{password}</if>
+	</select>
+	
+	<!-- 用户管理 -->
+	<sql id="queryUsers_condition">
+		<where>
+		    (IFNULL(u.openId,'') != '')
+		    <if test="user_name != null and user_name != ''"><![CDATA[ AND u.user_name like CONCAT(CONCAT('%',#{user_name},'%')) ]]></if>
+			<if test="city != null and city != ''"><![CDATA[ AND u.city like CONCAT(CONCAT('%',#{city},'%')) ]]></if>
+			<if test="company != null and company != ''"><![CDATA[ AND u.company like CONCAT(CONCAT('%',#{company},'%')) ]]></if>
+			<if test="position != null and position != ''"><![CDATA[ AND u.position like CONCAT(CONCAT('%',#{position},'%')) ]]></if>
+			<if test="isMember != null and isMember != '' and isMember == '1'.toString()"> 
+				AND u.isMember = #{isMember} AND Date(u.member_end_date) <![CDATA[>=]]> #{dateTime}
+			</if>
+			<if test="isMember != null and isMember != '' and isMember == '0'.toString()"> 
+				<![CDATA[ AND ( u.isMember = #{isMember} OR (u.isMember = '1' AND Date(u.member_end_date) < #{dateTime}))]]>
+			</if>
+			
+			<if test="register_startDate !=null and register_startDate != ''">
+				AND Date(u.register_date) <![CDATA[>=]]> #{register_startDate}
+			</if>
+			<if test="register_endDate !=null and register_endDate != ''">
+				AND Date(u.register_date) <![CDATA[<=]]> #{register_endDate}
+			</if>
+			
+			<if test="read_startNum !=null and read_startNum != 0">
+				AND s.total_read_num <![CDATA[>=]]> #{read_startNum}
+			</if>
+			<if test="read_endNum !=null and read_endNum != 0">
+				AND s.total_read_num <![CDATA[<=]]> #{read_endNum}
+			</if>
+			
+			<if test="share_startNum !=null and share_startNum != 0">
+				AND s.total_share_num <![CDATA[>=]]> #{share_startNum}
+			</if>
+			<if test="share_endNum !=null and share_endNum != 0">
+				AND s.total_share_num <![CDATA[<=]]> #{share_endNum}
+			</if>
+			
+			<if test="money != null and money != 0.0"><![CDATA[ AND o.money = #{money}]]></if>
+			<if test="create_datetime != null and create_datetime != ''"><![CDATA[ AND DATE_FORMAT(u.create_datetime,'%Y-%m-%d') = #{create_datetime}]]></if>
+			<if test="open_date != null and open_date != ''"><![CDATA[ AND u.open_date = #{open_date}]]></if>
+			
+			<if test="subscribe != null and subscribe != '' and subscribe == '1'.toString()"> 
+				AND u.subscribe = 1
+			</if>
+			<if test="isSubscribe != null and isSubscribe != '' and isSubscribe == '0'.toString()"> 
+				AND u.subscribe = 0
+			</if>
+			
+		</where>
+	</sql>
+	
+	<select id="queryUsersListCount" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT u.*, s.total_share_num AS total_share, s.total_read_num AS total_read, s.total_read_times
+			FROM qly_rh_user u 
+			LEFT JOIN qly_rh_user_statistics s ON u.openId = s.openId
+		]]>
+		<include refid="queryUsers_condition" />
+		) q
+	</select>
+	
+	<select id="queryUsersList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.*, s.total_share_num AS total_share, s.total_read_num AS total_read, s.total_read_times
+			FROM qly_rh_user u 
+			LEFT JOIN qly_rh_user_statistics s ON u.openId = s.openId
+		]]>
+		<include refid="queryUsers_condition" />
+		
+		<if test='readTimes_sort != null and readTimes_sort == "R"'>ORDER BY total_read_times ASC</if>
+		<if test='readTimes_sort != null and readTimes_sort == "D"'>ORDER BY total_read_times DESC</if>
+		<if test='readTimes_sort != null and shareNum_sort == "R"'>,total_share ASC</if>
+		<if test='readTimes_sort != null and shareNum_sort == "D"'>,total_share DESC</if>
+		<if test='readTimes_sort != null and readNum_sort == "R"'>,total_read ASC</if>
+		<if test='readTimes_sort != null and readNum_sort == "D"'>,total_read DESC</if>
+		
+		<if test='readTimes_sort == null and shareNum_sort == "R"'>ORDER BY total_share ASC</if>
+		<if test='readTimes_sort == null and shareNum_sort == "D"'>ORDER BY total_share DESC</if>
+		
+		<if test='readTimes_sort == null and shareNum_sort != null and readNum_sort == "R"'>,total_read ASC</if>
+		<if test='readTimes_sort == null and shareNum_sort != null and readNum_sort == "D"'>,total_read DESC</if>
+		
+		<if test='readTimes_sort == null and shareNum_sort == null and readNum_sort == "R"'>ORDER BY total_read ASC</if>
+		<if test='readTimes_sort == null and shareNum_sort == null and readNum_sort == "D"'>ORDER BY total_read DESC</if>
+		
+		<if test='readTimes_sort == null and shareNum_sort == null and readNum_sort == null'>ORDER BY user_id DESC</if>
+	</select>
+	
+	<select id="queryUsersListCountFromIndex" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT u.*, s.total_share_num AS total_share, s.total_read_num AS total_read, s.total_read_times
+			FROM qly_rh_user u
+			INNER JOIN qly_rh_share_record r ON u.openId = r.visitor_id
+			LEFT JOIN qly_rh_user_statistics s ON u.openId = s.openId
+			WHERE (IFNULL(u.openId, '') != '')
+			GROUP BY u.openId
+		]]>
+		) q
+	</select>
+	
+	<select id="queryUsersListFromIndex" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.*, s.total_share_num AS total_share, s.total_read_num AS total_read, s.total_read_times
+			FROM qly_rh_user u
+			INNER JOIN qly_rh_share_record r ON u.openId = r.visitor_id
+			LEFT JOIN qly_rh_user_statistics s ON u.openId = s.openId
+			WHERE (IFNULL(u.openId, '') != '')
+			GROUP BY u.openId
+		]]>
+	</select>
+	
+	<select id="getOrderEndDate" parameterType="int" resultType="String">
+		<![CDATA[
+			SELECT end_date FROM qly_rh_order 
+			WHERE create_user_id = #{user_id} AND pay_status = '1' AND status = '01' 
+			ORDER BY order_id DESC
+			LIMIT 1
+		]]>
+	</select>
+	
+	<select id="queryUserShareArticlesList" parameterType="String" resultType="map">
+		<![CDATA[
+			SELECT s.article_uuid, s.article_title, DATE_FORMAT(s.create_datetime,'%Y-%m-%d %H:%i') AS share_date, r.collect_date, a.total_read_num
+			FROM qly_rh_share s
+			INNER JOIN qly_rh_reptile_article r ON s.article_uuid = r.uuid
+			INNER JOIN qly_rh_article_statistics a ON s.article_uuid = a.article_uuid
+			where s.sharer = #{openId}
+			GROUP BY s.article_uuid, s.article_title
+			ORDER BY s.create_datetime DESC
+		]]>
+	</select>
+	
+	<select id="queryUserReadArticlesList" parameterType="String" resultType="map">
+		<![CDATA[
+			SELECT s.article_uuid, sr.article_title, DATE_FORMAT(sr.visit_date,'%Y-%m-%d %H:%i') AS visit_date, sr.sharer, u.user_name AS sharer_name, s.share_date, a.total_read_num
+			FROM qly_rh_share_record sr
+			INNER JOIN qly_rh_share s ON sr.share_uuid = s.uuid
+			INNER JOIN qly_rh_article_statistics a ON s.article_uuid = a.article_uuid
+			INNER JOIN qly_rh_user u ON sr.sharer = u.openId
+			where sr.visitor_id = #{openId}
+			GROUP BY sr.article_title
+			ORDER BY s.create_datetime DESC
+		]]>
+	</select>
+	
+	<select id="queryNotPerfectInfoUsers" resultType="com.cd.qlyhk.vo.QlyRhUserVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_user
+			WHERE (IFNULL(openId,'') != '') AND (
+				(IFNULL(user_name, '') = '')
+				OR (IFNULL(telphone, '') = '')
+				OR (IFNULL(company, '') = '')
+				OR (IFNULL(position, '') = ''))
+		]]>
+	</select>
+	
+	<select id="queryMembershipRenewalUsers" resultType="com.cd.qlyhk.vo.QlyRhUserVO">
+		<![CDATA[
+			SELECT u.* FROM qly_rh_user u WHERE (IFNULL(u.openId, '') != '') AND u.isMember = '1'
+		]]>
+	</select>
+	
+	<select id="getQlyRhUserStatisticsVO" resultType="com.cd.qlyhk.vo.QlyRhUserStatisticsVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_user_statistics WHERE openId = #{openId}
+		]]>
+	</select>
+	
+	<select id="getQlyRhUserTotalPartner" parameterType="map" resultType="int">
+		<![CDATA[
+			SELECT COUNT(user_id) AS total_partner FROM qly_rh_user
+			WHERE recommender = #{openId}
+		]]>
+		<if test="register_date != null ">AND register_date = #{register_date}</if>
+	</select>
+	
+	<select id="queryNullUnionidUsers" resultType="com.cd.qlyhk.vo.QlyRhUserVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_user WHERE (IFNULL(openId, '') != '') AND (IFNULL(unionid, '') = '')
+		]]>
+	</select>
+	
+	<select id="queryDNDUsers" resultType="com.cd.qlyhk.vo.QlyRhUserVO">
+		<![CDATA[
+			SELECT u.* FROM qly_rh_message_remindset m
+			INNER JOIN qly_rh_user u ON m.user_id = u.user_id
+			WHERE m.remind_type = '2'
+		]]>
+	</select>
+	
+	<select id="getQlyRhUserByUnionid" resultType="com.cd.qlyhk.vo.QlyRhUserVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_user WHERE unionid = #{unionid} limit 1
+		]]>
+	</select>
+	
+</mapper>

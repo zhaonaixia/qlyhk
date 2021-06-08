@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.MorningPaperServiceImpl">
+
+	<select id="queryMorningPaperArticleCount" parameterType="String" resultType="Integer">
+		<![CDATA[
+			select COUNT(1) from qly_rh_morningpaper_article where mp_date = #{mp_date}
+		]]>
+	</select>
+	
+	<select id="queryMorningPaperArticleList" parameterType="String" resultType="map">
+		<![CDATA[
+			select m.*, s.total_read_num, s.total_share_num 
+			from qly_rh_morningpaper_article  m
+			LEFT JOIN qly_rh_article_statistics s ON m.article_uuid = s.article_uuid
+			where mp_date = #{mp_date}
+			order by order_index LIMIT 5
+		]]>
+	</select>
+	
+	<!-- 文章选择列表 -->
+	<sql id="queryArticlesList_condition">
+		<where>
+		    audit_status='02'
+			<if test="category_id != null and category_id != ''"><![CDATA[ AND c.category_id = #{category_id}]]></if>
+			<if test="article_title != null and article_title != ''"><![CDATA[ AND a.article_title like CONCAT(CONCAT('%',#{article_title},'%'))]]></if>
+			<if test="source != null and source != ''"><![CDATA[ AND a.source like CONCAT(CONCAT('%',#{source},'%'))]]></if>
+			<if test="collect_startDate !=null and collect_startDate != ''">
+				AND Date(a.collect_date) <![CDATA[>=]]> #{collect_startDate}
+			</if>
+			<if test="collect_endDate !=null and collect_endDate != ''">
+				AND Date(a.collect_date) <![CDATA[<=]]> #{collect_endDate}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="getArticlesListCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM (
+			SELECT a.* FROM qly_rh_reptile_article a
+			LEFT JOIN qly_rh_article_category c ON a.id = c.article_id
+			LEFT JOIN qly_rh_sys_category sc ON c.category_id = sc.category_id 
+		]]>
+		<include refid="queryArticlesList_condition" />
+		GROUP BY a.uuid,a.article_title
+	) q
+	</select>
+	
+	<select id="getArticlesList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT a.* FROM qly_rh_reptile_article a
+		]]>
+		<include refid="queryArticlesList_condition" />
+		GROUP BY a.uuid,a.article_title
+		ORDER BY a.create_datetime DESC
+	</select>
+	
+	<select id="getMaxOrderIndex" parameterType="String" resultType="Integer">
+		<![CDATA[
+			select max(order_index) from qly_rh_morningpaper_article where mp_date = #{mp_date}
+		]]>	
+	</select>
+	
+	<insert id="addMorningpaperArticles" parameterType="list">
+		<![CDATA[
+			insert into qly_rh_morningpaper_article (article_uuid, article_title, article_url, source, mp_date, order_index, create_user, create_datetime) values 
+	    ]]>
+	    <foreach collection="list" item="dt" separator=",">
+			(#{dt.article_uuid}, #{dt.article_title}, #{dt.article_url}, #{dt.source}, #{dt.mp_date}, #{dt.order_index}, #{dt.create_user}, SYSDATE())
+		</foreach>
+	</insert>
+	
+	<update id="updateMorningpaperArticles" parameterType="map">
+		UPDATE qly_rh_morningpaper_article set order_index = #{order_index}, modify_user = #{modify_user}, modify_datetime = #{modify_datetime} where id = #{id}
+	</update>
+	
+	<delete id="delMorningpaperArticles" parameterType="int">
+		delete from qly_rh_morningpaper_article where id = #{id}
+	</delete>
+	
+	<insert id="addMorningpaperArticle" parameterType="com.cd.qlyhk.vo.QlyRhMorningPaperArticleVO">
+		<![CDATA[
+			insert into qly_rh_morningpaper_article (article_uuid, article_title, article_url, source, mp_date, order_index, create_user, create_datetime) values 
+			(#{article_uuid}, #{article_title}, #{article_url}, #{source}, #{mp_date}, #{order_index}, #{create_user}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<select id="checkArticleUuidUnique" parameterType="String" resultType="String">
+		SELECT article_title FROM qly_rh_morningpaper_article WHERE article_uuid = #{article_uuid} AND mp_date = #{mp_date}
+	</select>
+	
+	<select id="getMorningpaperArticleCount" parameterType="String" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM qly_rh_morningpaper_article WHERE mp_date = #{mp_date}
+		]]>
+	</select>
+	
+</mapper>

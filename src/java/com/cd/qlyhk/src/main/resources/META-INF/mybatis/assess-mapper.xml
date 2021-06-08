@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.AssessServiceImpl">
+    <select id="finalByArticleAndStatistics" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT a.article_title,a.pic_url,a.audit_status,a.source,a.create_user,b.total_read_num FROM qly_rh_reptile_article a LEFT JOIN qly_rh_article_statistics b ON a.uuid = b.article_uuid
+        <where>
+            <if test="article_title != null and article_title != ''">
+                <![CDATA[a.article_title like '%' #{article_title} '%']]>
+            </if>
+            and a.create_datetime between #{createTimeOne} and #{createTimeTwo}
+            <if test="create_user != null and create_user != ''">
+                and a.create_user=#{create_user}
+            </if>
+        </where>
+    </select>
+
+
+    <select id="finalByMorning" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT a.article_title,a.pic_url,c.mp_date,a.source,a.create_user,b.total_read_num FROM qly_rh_reptile_article a LEFT JOIN qly_rh_article_statistics b ON a.uuid = b.article_uuid LEFT JOIN qly_rh_morningpaper_article c ON a.uuid = c.article_uuid
+	<where>
+        <if test="article_title != null and article_title != ''">
+            <![CDATA[a.article_title like '%' #{article_title} '%']]>
+        </if>
+        AND c.mp_date between #{mpDateOne} and #{mpDateTwo}
+    </where>
+    </select>
+
+    <select id="finalByUser" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT a.headImgUrl,a.user_name,a.register_date,a.member_end_date,b.total_share_num,b.total_read_num,b.total_read_times FROM qly_rh_user a LEFT JOIN qly_rh_user_statistics b ON a.openId = b.openId
+        <where>
+            a.isMember = '1'
+            <if test="user_name != null and user_name != ''">
+                <![CDATA[and a.user_name like '%' #{user_name} '%']]>
+            </if>
+            and a.member_end_date between #{beginDate} and #{endDate} and b.total_read_times between #{beginTimes} and #{endTimes}
+            <if test="country != null and country != ''">
+                and a.country = #{country}
+            </if>
+            <if test="province != null and province != ''">
+                and a.province = #{province}
+            </if>
+            <if test="city != null and city != ''">
+                and a.city = #{city}
+            </if>
+        </where>
+    </select>
+
+    <select id="finalByArticle" parameterType="java.util.Map" resultType="java.util.Map">
+        SELECT a.article_title,a.create_user,a.order_index,b.total_read_num FROM qly_rh_morningpaper_article a LEFT JOIN qly_rh_article_statistics b ON a.article_uuid = b.article_uuid
+        <where>
+            <if test="article_title != null and article_title != ''">
+                <![CDATA[and a.article_title like '%' #{article_title} '%']]>
+            </if>
+            and DATE_FORMAT(a.mp_date,'%Y-%m') = #{mp_date}
+            order by b.total_read_num desc limit 10
+        </where>
+    </select>
+</mapper>

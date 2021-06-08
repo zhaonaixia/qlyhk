@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.SignUpServiceImpl">
+    
+    <insert id="insertSignUp" parameterType="com.cd.qlyhk.vo.SignUpDTO">
+	   	<![CDATA[
+			insert into sign_up (company_name, user_name, telphone, position, create_time, people_num) values 
+			(#{companyName},#{userName},#{telphone},#{position}, SYSDATE(),#{people_num})
+	    ]]>
+	</insert>
+	
+	
+	<select id="getSignUpDTO" parameterType="com.cd.qlyhk.vo.SignUpDTO" resultType="map">
+		<![CDATA[
+			SELECT * FROM sign_up WHERE company_name = #{companyName} AND user_name = #{userName} AND telphone = #{telphone}
+		]]>
+	</select>
+	
+</mapper>

@@ -1,0 +1,232 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.PubCommonServiceImpl">
+    
+   <select id="getCategoryList" resultType="com.cd.qlyhk.vo.QlyRhSysCategoryVO">
+		<![CDATA[
+			select * from qly_rh_sys_category ORDER BY order_index
+		]]>
+	</select>
+	
+	<select id="getUserId" parameterType="String" resultType="int">
+		<![CDATA[
+			select user_id from qly_rh_user where openId = #{openId}
+		]]>
+	</select>
+	
+	<select id="getSubscribeList" parameterType="String" resultType="com.cd.qlyhk.vo.QlyRhSysCategoryVO">
+		<![CDATA[
+			select c.* from qly_rh_sys_category c 
+			INNER JOIN qly_rh_subscribe s on c.category_id = s.category_id 
+			where s.user_id in (
+						select user_id from qly_rh_user 
+						where openId = #{openId}
+			)
+		]]>
+	</select>
+	
+	<delete id="deleteSubscribeArticles" parameterType="int">
+		delete from qly_rh_subscribe where user_id = #{user_id}
+	</delete>
+    
+	
+	<insert id="insertSubscribeArticles" parameterType="com.cd.qlyhk.vo.QlyRhSubscribeVO">
+		<![CDATA[
+			insert into qly_rh_subscribe (user_id, category_id, modify_datetime) values 
+			(#{user_id}, #{category_id}, #{modify_datetime})
+		]]>
+	</insert>
+	
+	<select id="getMessageRemindSet" parameterType="String" resultType="com.cd.qlyhk.vo.QlyRhMessageRemindSetVO">
+		<![CDATA[
+			select m.* from qly_rh_message_remindset m 
+			INNER JOIN qly_rh_user u on m.user_id=u.user_id 
+			where openId=#{openId}
+		]]>
+	</select>
+	
+	<update id="updateMessageRemindSet" parameterType="com.cd.qlyhk.dto.QlyRhMessageRemindSetDTO">
+		update qly_rh_message_remindset
+        <set>
+            <if test="remind_type!=null">remind_type=#{remind_type},</if>
+            <if test="push_type!=null">push_type=#{push_type},</if>
+            <if test="modify_datetime!=null">modify_datetime=#{modify_datetime}</if>
+        </set>
+        where user_id = #{user_id}
+    </update>
+    
+    <insert id="insertQlyRhMessageRemindSet" parameterType="com.cd.qlyhk.dto.QlyRhMessageRemindSetDTO">
+    	insert into qly_rh_message_remindset (user_id, remind_type, push_type, modify_datetime) values 
+		(#{user_id}, #{remind_type}, #{push_type}, #{modify_datetime})
+    </insert>
+    
+    <select id="getQlyRhUserVO" parameterType="String" resultType="com.cd.qlyhk.vo.QlyRhUserVO">
+		<![CDATA[
+			select u.* from qly_rh_user u where u.openId = #{openId} LIMIT 1
+		]]>
+	</select>
+	
+	<select id="querySysAreaList" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhSysAreaVO">
+		<![CDATA[
+			select area_code as areaCode,area_name as areaName,area_level as areaLevel,parent_area_code as parentAreaCode,full_area_name as areaFullName,full_area_code as areaFullCode
+			from qly_rh_sys_area
+			order by area_code asc
+		]]>
+	</select>
+	
+	<select id="getSysAreaByAreaName" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhSysAreaVO">
+		<![CDATA[
+			select area_code as areaCode,area_name as areaName,area_level as areaLevel,parent_area_code as parentAreaCode,full_area_name as areaFullName,full_area_code as areaFullCode 
+			from qly_rh_sys_area where area_name = #{area_name} limit 1
+		]]>
+	</select>
+	
+	<select id="queryUserCustomQuery" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhUserCustomQueryVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_user_custom_query
+			WHERE user_id = #{userId} AND module_code = #{moduleCode}
+		]]>
+	</select>
+	
+	<insert id="insertUserCustomQuery" parameterType="com.cd.qlyhk.vo.ReqUserCustomQueryDTO" keyProperty="id" useGeneratedKeys="true">
+	   	<![CDATA[
+			insert into qly_rh_user_custom_query (user_id, module_code, name, data, create_datetime) values 
+			(#{user_id}, #{module_code}, #{name}, #{data}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<select id="getUserCustomQueryVO" parameterType="com.cd.qlyhk.vo.ReqUserCustomQueryDTO" resultType="com.cd.qlyhk.vo.QlyRhUserCustomQueryVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_user_custom_query
+			WHERE id = #{id} AND user_id = #{user_id} limit 1
+		]]>
+	</select>
+	
+	<delete id="deleteUserCustomQuery" parameterType="map">
+		<![CDATA[
+			DELETE FROM qly_rh_user_custom_query
+			WHERE id = #{customQueryId} AND user_id = #{userId}
+		]]>
+	</delete>
+	
+	<insert id="insertUserCustomTable" parameterType="com.cd.qlyhk.vo.ReqUserCustomTableDTO">
+	   	<![CDATA[
+			insert into qly_rh_user_custom_table (user_id, module_code, name, data, create_datetime) values 
+			(#{user_id}, #{module_code}, #{name}, #{data}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<update id="updateUserCustomTable" parameterType="com.cd.qlyhk.vo.ReqUserCustomTableDTO">
+		<![CDATA[
+			update qly_rh_user_custom_table set data=#{data}, modify_datetime=SYSDATE() where user_id = #{user_id} and module_code = #{module_code}
+		]]>
+    </update>
+	
+	<select id="getUserCustomTableVO" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhUserCustomTableVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_user_custom_table
+			WHERE user_id = #{userId} AND module_code = #{moduleCode} limit 1
+		]]>
+	</select>
+	
+	<select id="selectArticleCategoryCount" parameterType="int" resultType="Integer">
+		SELECT COUNT(*) from qly_rh_article_category where category_id = #{category_id}
+	</select>
+	
+	<delete id="deleteArticleCategory" parameterType="int">
+		delete from qly_rh_article_category where category_id = #{category_id}
+	</delete>
+	
+	<delete id="deleteSysCategory" parameterType="int">
+		delete from qly_rh_sys_category where category_id = #{category_id}
+	</delete>
+	
+	<insert id="addSysCategory" parameterType="com.cd.qlyhk.vo.QlyRhSysCategoryVO">
+		insert into qly_rh_sys_category (category_code, category_name, type) values 
+		(#{category_code}, #{category_name}, #{type})
+	</insert>
+	
+	<update id="updateSysCategory" parameterType="com.cd.qlyhk.vo.QlyRhSysCategoryVO">
+		<![CDATA[
+			update qly_rh_sys_category 
+		]]>
+		<set>
+      		<if test="category_name != null"> category_name = #{category_name}, </if>
+      		<if test="order_index != null"> order_index = #{order_index}, </if>
+		</set>
+		<![CDATA[
+			where category_id = #{category_id}
+		]]>
+    </update>
+	
+	<!-- 获取默认的自定义表格列显示数据 -->
+	<select id="queryDefaultCustomTable" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhDefaultCustomTableVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_default_custom_table
+			WHERE module_code = #{moduleCode}
+		]]>
+	</select>
+	
+	<select id="getQlyRhSysCategoryVO" parameterType="int" resultType="com.cd.qlyhk.vo.QlyRhSysCategoryVO">
+		<![CDATA[
+			select * from qly_rh_sys_category where category_id = #{category_id}
+		]]>
+	</select>
+	
+	<select id="getMessageRemindSetVOByUserId" parameterType="int" resultType="com.cd.qlyhk.vo.QlyRhMessageRemindSetVO">
+		<![CDATA[
+			select * from qly_rh_message_remindset where user_id = #{userId}
+		]]>
+	</select>
+	
+	<!-- 
+	<select id="queryOrgDeptTree" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhOrgDeptVO">
+		<![CDATA[
+			select * from qly_rh_org_dept where org_id = #{org_id}
+		]]>
+		<if test="parent_id != null "><![CDATA[ AND parent_id = #{parent_id}]]></if>
+		<if test="level != null "><![CDATA[ AND level = #{level}]]></if>
+	</select>
+	 -->
+	
+	<!-- 新增部门 -->
+	<!-- 
+    <insert id="saveOrgDept" parameterType="map" statementType="CALLABLE">
+		{call p_pub_adddata_multilevel(
+			  'qly_rh_org_dept'
+			  ,'code	name	parent_id	org_id	record_state'
+			  ,'\&apos;${code}\&apos;	\&apos;${name}\&apos;	${parent_id}	${org_id}	${record_state}'
+			  ,${parent_id}
+			  ,'id'
+			  ,'fullid'
+			  ,'level'
+			  ,'code'
+			  ,'${code}'
+			  ,'fullcode'
+			  ,'name'
+			  ,'${name}'
+			  ,'fullname'
+			  ,'isleaf'
+			  ,'	'
+			  ,#{issucc,jdbcType=VARCHAR,mode=OUT},#{errmsg,jdbcType=VARCHAR,mode=OUT},#{newid,jdbcType=VARCHAR,mode=OUT}
+		)}
+	</insert>
+	 -->
+	 
+	<insert id="insertQlyRhUserDept" parameterType="map">
+	   	<![CDATA[
+			insert into qly_rh_user_group (user_id, dept_id) values (#{userId}, #{deptId})
+	    ]]>
+	</insert>
+	
+	<update id="updateQlyRhUserDept" parameterType="map">
+		<![CDATA[
+			update qly_rh_user_group set dept_id = #{deptId} where user_id = #{userId}
+		]]>
+    </update>
+    
+    <delete id="deleteQlyRhUserDept" parameterType="int">
+		delete from qly_rh_user_group where user_id = #{userId}
+	</delete>
+	
+</mapper>

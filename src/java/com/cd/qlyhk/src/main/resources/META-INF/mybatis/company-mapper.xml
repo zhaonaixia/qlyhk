@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.CompanyServiceImpl">
+    
+    <insert id="insertQlyRhCompany" parameterType="com.cd.qlyhk.vo.QlyRhCompanyVO" keyProperty="company_id" useGeneratedKeys="true">
+	   	<![CDATA[
+			insert into qly_rh_company (company_name, abbr_name, social_credit_code, name, mobile_phone, create_datetime) values 
+			(#{company_name},#{abbr_name},#{social_credit_code},#{name},#{mobile_phone},SYSDATE())
+	    ]]>
+	</insert>
+	
+	<insert id="insertQlyRhUserCompany" parameterType="com.cd.qlyhk.vo.QlyRhUserCompanyVO">
+	   	<![CDATA[
+			insert into qly_rh_user_company (user_id, company_id) values (#{user_id},#{company_id})
+	    ]]>
+	</insert>
+	
+	<update id="updateQlyRhCompany" parameterType="com.cd.qlyhk.vo.QlyRhCompanyVO">
+		update qly_rh_company 
+		<set>
+            <if test="abbr_name!=null">abbr_name=#{abbr_name},</if>
+            <if test="modify_datetime!=null">modify_datetime=#{modify_datetime}</if>
+        </set>
+		where company_id = #{company_id}
+	</update>
+	
+	<!-- 查询公司名称是否已经存在 -->
+	<select id="getQlyRhCompanyByName" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhCompanyVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_company WHERE company_name = #{company_name}
+		]]>
+	</select>
+	
+	<!-- 查询文章是否已发布 -->
+	<select id="getQlyRhReleaseArticleVO" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhReptileArticleVO">
+		<![CDATA[
+			SELECT a.* FROM qly_rh_reptile_article a
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id
+			WHERE a.article_url = #{articleUrl} AND c.company_id = #{companyId}
+		]]>
+	</select>
+	
+	
+	<!-- 查询发布文章列表 -->
+	<sql id="queryReleaseArticle_condition">
+		<where>
+		    c.company_id = #{companyId}
+			<if test="article_title != null and article_title != ''"><![CDATA[ AND a.article_title like CONCAT(CONCAT('%',#{article_title},'%'))]]></if>
+		</where>
+	</sql>
+	
+	<select id="queryReleaseArticleCount" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT a.uuid, a.article_title, a.collect_date
+			FROM qly_rh_reptile_article a
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id
+		]]>
+		<include refid="queryReleaseArticle_condition" />
+		GROUP BY a.uuid,a.article_title
+		) q
+	</select>
+	
+	<select id="queryReleaseArticleList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT a.uuid, a.article_title, a.collect_date
+			FROM qly_rh_reptile_article a
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id
+		]]>
+		<include refid="queryReleaseArticle_condition" />
+		GROUP BY a.uuid,a.article_title
+		ORDER BY a.create_datetime DESC
+	</select>
+	
+	<!-- 公司管理列表 -->
+	<!-- 2020-06-08注释
+	<sql id="queryCompanyStaff_condition">
+		<where>
+		    c.company_id = #{companyId} AND d.org_id = #{companyId}
+			<if test="user_name != null and user_name != ''"><![CDATA[ AND u.user_name like CONCAT(CONCAT('%',#{user_name},'%')) ]]></if>
+			<if test="deptId != null"><![CDATA[ AND d.fullid LIKE CONCAT(CONCAT('%',#{deptId},'%')) ]]></if>
+		</where>
+	</sql>
+	
+	<select id="queryCompanyStaffCount" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT u.openId, u.user_name, u.headImgUrl, u.company, u.isMember, u.telphone 
+			FROM qly_rh_user u
+			INNER JOIN qly_rh_company c ON u.company = c.company_name
+			INNER JOIN qly_rh_user_group g ON u.user_id = g.user_id
+			INNER JOIN qly_rh_org_dept d ON g.dept_id = d.id
+		]]>
+		<include refid="queryCompanyStaff_condition" />
+		) q
+	</select>
+	
+	<select id="queryCompanyStaffList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT d.`level` as deptLevel,u.openId, u.user_name, u.headImgUrl, u.company, u.isMember, u.telphone, d.`name` as department 
+			FROM qly_rh_user u
+			INNER JOIN qly_rh_company c ON u.company = c.company_name
+			INNER JOIN qly_rh_user_group g ON u.user_id = g.user_id
+			INNER JOIN qly_rh_org_dept d ON g.dept_id = d.id
+		]]>
+		<include refid="queryCompanyStaff_condition" />
+		ORDER BY deptLevel,u.create_datetime ASC
+	</select>
+	 -->
+	<select id="pQueryCompanyStaff" parameterType="map" resultType="map">
+		<![CDATA[
+			call p_query_company_staff_share(#{companyId}, #{user_name}, #{start}, #{pageSize}, #{orderType})
+		]]>
+	</select>
+	
+	<!-- 
+	<select id="getQlyRhUserByCompanyName" parameterType="string" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name FROM qly_rh_user u
+			INNER JOIN qly_rh_user_company uc ON u.user_id = uc.user_id
+			INNER JOIN qly_rh_company c ON uc.company_id = c.company_id
+			WHERE c.company_name = #{company_name}
+		]]>
+	</select>
+	 -->
+	 
+	<!-- 查询公司成员，具体分享公司文章数和最后一次分享日期  -->
+	<select id="getTotalShare" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(s.share_id) AS total_share FROM qly_rh_share s
+			INNER JOIN qly_rh_reptile_article a ON s.article_uuid = a.uuid
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id AND c.company_id = #{companyId}
+			where s.sharer = #{openId}
+		]]>
+	</select>
+	
+	<select id="getLatelyShareDate" parameterType="map" resultType="string">
+		<![CDATA[
+			SELECT s.create_datetime AS share_date FROM qly_rh_share s
+			INNER JOIN qly_rh_reptile_article a ON s.article_uuid = a.uuid
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id AND c.company_id = #{companyId}
+			WHERE s.sharer = #{openId}
+			ORDER BY s.share_id DESC
+			LIMIT 1
+		]]>
+	</select>
+	
+	<!-- 
+	<select id="getUserInCompany" parameterType="string" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, u.isMember, u.telphone 
+			FROM qly_rh_user u
+			INNER JOIN qly_rh_company c ON u.company = c.company_name
+			WHERE u.openId = #{openId}
+		]]>
+	</select>
+	
+	<select id="queryCompanyAllUser" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.user_id, u.openId, u.user_name, u.headImgUrl, u.company, u.position, d.fullid as dept_fullid, d.`name` AS department
+			FROM qly_rh_user u
+			INNER JOIN qly_rh_company c ON u.company = c.company_name
+			LEFT JOIN qly_rh_user_group g ON u.user_id = g.user_id
+			LEFT JOIN qly_rh_org_dept d ON g.dept_id = d.id
+			WHERE c.company_name = #{company_name} 
+		]]>
+		<if test="openId != null and openId != ''"><![CDATA[ AND u.openId <> #{openId} ]]></if>
+	</select>
+	 -->
+	 
+	<!-- 公司转让 -->
+	<!-- 
+	<update id="updateQlyRhUserCompany" parameterType="map">
+		update qly_rh_user_company set user_id = #{receiverUserId} where user_id = #{userId}
+	</update>
+	 -->
+	 
+	<select id="queryTeamShareData" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT a.uuid, a.article_title, COUNT(s.sharer) AS team_share_num
+			FROM qly_rh_reptile_article a
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id AND c.company_id = #{companyId}
+			INNER JOIN qly_rh_share s ON a.uuid = s.article_uuid
+			INNER JOIN qly_rh_user u ON s.sharer = u.openId 
+		]]>
+		<if test="unionidList!=null">
+			<foreach collection="unionidList" index="index" item="unionid" open=" AND u.unionid in (" separator="," close=")" >
+					#{unionid}
+			</foreach>
+		</if>
+		GROUP BY a.uuid, a.article_title
+	</select>
+	
+	<!-- 文章阅读详情查询 -->
+	<select id="queryTeamArticleReadDetails" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT DISTINCT r.visitor_id FROM qly_rh_share_record r
+			INNER JOIN qly_rh_share s ON r.share_uuid = s.uuid
+			WHERE s.article_uuid = #{articleId}
+			ORDER BY r.id DESC
+		]]>
+	</select>
+	
+	<!-- 文章分享详情查询
+	<select id="queryTeamArticleShareDetails" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT d.`level` AS deptLevel, u.openId, u.user_name, u.headImgUrl, u.position, DATE_FORMAT(s.create_datetime,'%Y-%m-%d %H:%i:%s') AS share_date, d.`name` AS department
+			FROM qly_rh_share s
+			INNER JOIN qly_rh_user u ON s.sharer = u.openId AND u.company = #{company_name}
+			INNER JOIN qly_rh_user_group g ON u.user_id = g.user_id
+			INNER JOIN qly_rh_org_dept d ON g.dept_id = d.id
+			WHERE s.article_uuid = #{articleId} AND d.org_id = #{companyId}
+		]]>
+		<if test="deptId != null"><![CDATA[ AND d.fullid LIKE CONCAT(CONCAT('%',#{deptId},'%')) ]]></if>
+		ORDER BY deptLevel ASC, s.share_date DESC
+	</select> -->
+	
+	<!-- 队员分享情况查询 -->
+	<select id="queryShareTeamArticles" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhShareVO">
+		<![CDATA[
+			SELECT s.* FROM qly_rh_reptile_article a
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id AND c.company_id = #{companyId}
+			INNER JOIN qly_rh_share s ON a.uuid = s.article_uuid
+			where s.sharer = #{openId}
+			ORDER BY s.share_id DESC
+		]]>
+	</select>
+	
+	<!-- 公司成员数 -->
+	<!-- 
+	<select id="getQlyRhUserTeamMember" parameterType="map" resultType="int">
+		<![CDATA[
+			SELECT COUNT(u.user_id) AS team_member FROM qly_rh_user u
+			INNER JOIN qly_rh_company c ON u.company = c.company_name
+			WHERE c.company_id = #{companyId}
+		]]>
+	</select>
+	
+	<select id="queryTeamMemberList" parameterType="int" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name FROM qly_rh_user u
+			INNER JOIN qly_rh_company c ON u.company = c.company_name
+			WHERE c.company_id = #{companyId}
+		]]>
+	</select>
+	 -->
+	 
+	<select id="getLatelyTeamArticle" parameterType="int" resultType="map">
+		<![CDATA[
+			SELECT a.uuid AS article_uuid, a.article_title, a.collect_date FROM qly_rh_reptile_article a
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id
+			WHERE c.company_id = #{companyId}
+			ORDER BY a.id DESC LIMIT 1
+		]]>
+	</select>
+	
+	<!-- 公司文章，阅读详情 -->
+	<select id="getCompanyReadNumByUUID" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(r.id) AS recordNum FROM qly_rh_share_record r
+			INNER JOIN qly_rh_share s ON r.share_uuid = s.uuid
+			WHERE r.visitor_id = #{openId}
+			AND s.article_uuid = #{article_uuid}
+		]]>
+	</select>
+	
+	<select id="getCompanyReadTimeByUUID" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT SUM(r.read_time) AS total_read_time FROM qly_rh_share_record r
+			INNER JOIN qly_rh_share s ON r.share_uuid = s.uuid
+			WHERE r.visitor_id = #{openId}
+			AND s.article_uuid = #{article_uuid}
+		]]>
+	</select>
+	
+	<select id="getCompanyShareNumByUUID" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT article_title) shareNum FROM qly_rh_share
+			WHERE sharer = #{openId}
+			AND article_uuid = #{article_uuid}
+		]]>
+	</select>
+	
+	<!-- 公司文章，分享详情 -->
+	<select id="queryCompanyShareDateByUUID" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, u.headImgUrl, u.position, u.unionid, DATE_FORMAT(s.create_datetime, '%Y-%m-%d %H:%i:%s') AS share_date FROM qly_rh_share s
+			INNER JOIN qly_rh_user u ON s.sharer = u.openId
+			WHERE s.article_uuid = #{article_uuid}
+		]]>
+		<if test="unionidList!=null">
+			<foreach collection="unionidList" index="index" item="unionid" open=" AND u.unionid in (" separator="," close=")" >
+					#{unionid}
+			</foreach>
+		</if>
+		ORDER BY share_date DESC
+	</select>
+	
+	<select id="queryCompanyUsersByUnionid" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, u.headImgUrl, u.position, u.member_end_date, u.unionid FROM qly_rh_user u WHERE 1=1 
+		]]>
+		<foreach collection="unionidList" index="index" item="unionid" open=" AND u.unionid in (" separator="," close=")" >
+			#{unionid}
+		</foreach>
+	</select>
+	
+</mapper>

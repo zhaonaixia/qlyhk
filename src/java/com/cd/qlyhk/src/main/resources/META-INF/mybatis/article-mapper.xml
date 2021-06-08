@@ -1,0 +1,761 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.ArticleServiceImpl">
+    <!-- 
+    <insert id="insertQlyRhReptileArticle" parameterType="com.cd.qlyhk.vo.QlyRhReptileArticleVO">
+	   	<![CDATA[
+			insert into qly_rh_reptile_article (uuid, article_title, article_url, pic_url, description, create_user, ispublic, audit_status, istop, collect_date, create_datetime) values 
+			(#{uuid}, #{article_title}, #{article_url}, #{pic_url}, #{description}, #{create_user}, #{ispublic}, #{audit_status}, #{istop}, #{collect_date}, SYSDATE())
+	    ]]>
+	</insert>
+	 -->
+	 
+	<update id="updateArticleTop" parameterType="map">
+    	update qly_rh_article_category set istop = #{istop} where article_id = #{articleId} and category_id = #{categoryId}
+    </update>
+    
+    
+	<!-- 获客好文 -->
+	<sql id="queryArticles_condition">
+		<where>
+		    1 = 1
+			<if test="category_id != null "><![CDATA[ AND c.category_id = #{category_id}]]></if>
+			<if test="ispublic != null "><![CDATA[ AND a.ispublic = #{ispublic}]]></if>
+			<if test="audit_status != null "><![CDATA[ AND a.audit_status = #{audit_status}]]></if>
+			<if test="article_title != null and article_title != '' "><![CDATA[ AND a.article_title like CONCAT(CONCAT('%',#{article_title},'%')) ]]></if>
+		</where>
+	</sql>
+	
+	<select id="queryArticlesListCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM (
+			SELECT a.uuid,a.article_title FROM qly_rh_reptile_article a 
+			LEFT JOIN qly_rh_article_category c ON a.id = c.article_id 
+			LEFT JOIN qly_rh_sys_category sc ON c.category_id = sc.category_id 
+		]]>
+		<include refid="queryArticles_condition" />
+		GROUP BY a.uuid,a.article_title
+	  ) q
+	</select>
+
+	 <select id="queryArticlesList" parameterType="map" resultType="map">
+		<![CDATA[
+			select a.uuid, a.article_title, a.pic_url, a.description from qly_rh_reptile_article a 
+			LEFT JOIN qly_rh_article_category c ON a.id = c.article_id
+			LEFT JOIN qly_rh_sys_category sc ON c.category_id = sc.category_id 
+		]]>
+		<include refid="queryArticles_condition" />
+		GROUP BY a.uuid,a.article_title
+		ORDER BY a.istop DESC, a.collect_date DESC
+	</select>
+	
+	<!-- 根据品牌查询获客好文列表 -->
+	<sql id="queryCompanyArticles_condition">
+		<where>
+			c.company_id = #{company_id}
+			<if test="ispublic != null "><![CDATA[ AND a.ispublic = #{ispublic}]]></if>
+			<if test="audit_status != null "><![CDATA[ AND a.audit_status = #{audit_status}]]></if>
+			<if test="article_title != null and article_title != '' "><![CDATA[ AND a.article_title like CONCAT(CONCAT('%',#{article_title},'%')) ]]></if>
+		</where>
+	</sql>
+	
+	<select id="queryCompanyArticlesListCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM (
+			SELECT a.uuid,a.article_title FROM qly_rh_reptile_article a 
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id
+		]]>
+		<include refid="queryCompanyArticles_condition" />
+		GROUP BY a.uuid,a.article_title
+	  ) q
+	</select>
+
+	 <select id="queryCompanyArticlesList" parameterType="map" resultType="map">
+		<![CDATA[
+			select a.uuid, a.article_title, a.pic_url, a.description from qly_rh_reptile_article a 
+			INNER JOIN qly_rh_company_article c ON a.id = c.article_id
+		]]>
+		<include refid="queryCompanyArticles_condition" />
+		GROUP BY a.uuid,a.article_title
+		ORDER BY a.istop DESC, a.collect_date DESC
+	</select>
+	
+	<!-- 文章阅读情况查询 -->
+	<select id="queryShareArticles" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhShareVO">
+		<![CDATA[
+			select * from qly_rh_share where sharer = #{openId} ORDER BY share_id DESC
+		]]>
+	</select>
+	
+	<select id="getCountRecordToday" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS recordNum FROM qly_rh_share_record r
+			INNER JOIN qly_rh_share s ON r.share_id = s.share_id
+			WHERE s.sharer = #{openId}
+				AND r.visit_date >= STR_TO_DATE(#{dateTime}, '%Y-%m-%d')
+				AND (IFNULL(r.visitor_id,'') != '')
+		]]>
+	</select>
+	
+	<select id="getCountRecordSevenDay" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS recordNum FROM qly_rh_share_record r
+			INNER JOIN qly_rh_share s ON r.share_id = s.share_id
+			WHERE s.sharer = #{openId}
+				AND r.visit_date > STR_TO_DATE(#{startDate}, '%Y-%m-%d')
+				AND r.visit_date < STR_TO_DATE(#{endDate}, '%Y-%m-%d')
+				AND (IFNULL(r.visitor_id,'') != '')
+		]]>
+	</select>
+	
+	<select id="getTotalCountRecord" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS recordNum FROM qly_rh_share_record r
+			INNER JOIN qly_rh_share s ON r.share_id = s.share_id
+			WHERE s.sharer = #{openId} AND (IFNULL(r.visitor_id,'') != '')
+		]]>
+	</select>
+	
+	<select id="getTotalNumByUUID" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS recordNum FROM qly_rh_share_record
+			WHERE share_uuid = #{share_uuid} AND (IFNULL(visitor_id,'') != '')
+		]]>
+	</select>
+	
+	<select id="getTotalReadersByUUID" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT visitor_id) AS recordNum FROM qly_rh_share_record
+			WHERE share_uuid = #{share_uuid} AND (IFNULL(visitor_id,'') != '')
+		]]>
+	</select>
+	
+	<select id="getTotalReadersByArticleUUID" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT visitor_id) AS recordNum FROM qly_rh_share_record r
+			INNER JOIN qly_rh_share s ON r.share_id = s.share_id
+			WHERE s.article_uuid = #{uuid} AND (IFNULL(r.visitor_id, '') != '')
+		]]>
+	</select>
+	
+	<select id="getShareNum" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS shareNum FROM qly_rh_share
+			WHERE source_share_uuid = #{share_uuid}
+		]]>
+	</select>
+	
+	<select id="getShareReaders" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT sharer) AS shareNum FROM qly_rh_share
+			WHERE source_share_uuid = #{share_uuid}
+		]]>
+	</select>
+	
+	<!-- 文章阅读情况详情查询 -->
+	<select id="queryArticleReadCondDetails" parameterType="string" resultType="map">
+		<![CDATA[
+			SELECT r.visitor_id FROM qly_rh_share_record r
+			LEFT JOIN qly_rh_user u ON r.visitor_id = u.openId
+			WHERE r.share_uuid = #{shareId} 
+			ORDER BY r.id DESC
+		]]>
+	</select>
+	
+	<select id="getTotalNumRead" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT article_title) AS recordNum FROM qly_rh_share_record
+			WHERE visitor_id = #{openId}
+		]]>
+	</select>
+	
+	<select id="getTotalReadTime" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT SUM(read_time) AS total_read_time FROM qly_rh_share_record
+			WHERE visitor_id = #{openId}
+		]]>
+	</select>
+	
+	<select id="getTotalShareNum" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT article_title) shareNum FROM qly_rh_share
+			WHERE sharer = #{openId}
+		]]>
+	</select>
+	
+	<select id="getReadTimeByUUID" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT SUM(read_time) AS read_time FROM qly_rh_share_record
+			WHERE visitor_id = #{openId} AND share_uuid = #{shareId}
+		]]>
+	</select>
+	
+	<select id="getReadNumByUUID" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS recordNum FROM qly_rh_share_record
+			WHERE visitor_id = #{openId} AND share_uuid = #{shareId}
+		]]>
+	</select>
+	
+	<select id="getSourceShareNumByUUID" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS shareNum FROM qly_rh_share
+			WHERE sharer = #{openId} AND source_share_uuid = #{shareId}
+		]]>
+	</select>
+	<!-- 结束 -->
+	
+	<!-- 查询访客情况 -->
+	<select id="queryRecordConditionList" parameterType="string" resultType="map">
+		<![CDATA[
+			SELECT r.visitor_id 
+			FROM qly_rh_share_record r
+			LEFT JOIN qly_rh_user u ON r.visitor_id = u.openId
+			WHERE r.share_id IN (
+						SELECT share_id FROM qly_rh_share
+						WHERE sharer = #{openId}
+			)
+			ORDER BY r.id DESC
+		]]>
+	</select>
+	
+	<select id="getTotalRecordConditionCount" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT r.user_name) AS total_num
+			FROM qly_rh_share_record r
+			WHERE r.share_id IN (
+						SELECT share_id FROM qly_rh_share
+						WHERE sharer = #{openId}
+			)
+		]]>
+	</select>
+	
+	<select id="getLatelyReadDate" parameterType="string" resultType="string">
+		<![CDATA[
+			SELECT visit_date FROM qly_rh_share_record
+			WHERE visitor_id = #{readOpenId}
+			ORDER BY id DESC LIMIT 1
+		]]>
+	</select>
+	<!-- 结束 -->
+	
+	<!-- 查询访客详情 -->
+	<select id="queryRhShareRecordList" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhShareRecordVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_share_record WHERE visitor_id = #{visitorId} AND sharer = #{openId} ORDER BY id DESC
+		]]>
+	</select>
+	
+	<select id="getRecordShareNum" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS shareNum FROM qly_rh_share
+			WHERE source_share_uuid = #{share_uuid} AND sharer = #{openId}
+		]]>
+	</select>
+	
+	<select id="queryRhShareRecordArticleList" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhShareRecordVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_share_record WHERE visitor_id = #{openId} 
+			AND share_uuid = #{shareId} ORDER BY id DESC
+		]]>
+	</select>
+	
+	<select id="queryRhRecordInfoByVisitorId" parameterType="string" resultType="map">
+		<![CDATA[
+			SELECT r.visitor_id, r.user_name, r.headImgUrl, u.telphone, u.ewm_url FROM qly_rh_share_record r
+			LEFT JOIN qly_rh_user u ON r.visitor_id = u.openId
+			WHERE r.visitor_id = #{visitorId} ORDER BY r.id DESC LIMIT 1
+		]]>
+	</select>
+	<!-- 结束 -->
+	
+	<select id="getArticleInfo" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhArticleVO">
+		<![CDATA[
+			select * from qly_rh_article where uuid = #{articleId}
+		]]>
+	</select>
+	
+	<select id="getArticleTotalShareNum" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS shareNum FROM qly_rh_share
+			WHERE article_uuid = #{articleId}
+		]]>
+	</select>
+	
+	<select id="getArticleTotalRecord" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS recordNum FROM qly_rh_share_record
+			WHERE share_id IN (
+				SELECT share_id FROM qly_rh_share WHERE article_uuid = #{articleId}
+			)
+		]]>
+	</select>
+	
+	<!-- 查询文章队列 -->
+	<select id="getQlyRhReptileQueueVO" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhReptileQueueVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_reptile_queue WHERE content_url = #{articleUrl}
+		]]>
+	</select>
+	
+	<!-- 查询文章 -->
+	<select id="getQlyRhReptileArticleVO" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhReptileArticleVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_reptile_article WHERE article_url = #{articleUrl}
+		]]>
+	</select>
+	
+	<insert id="insertQlyRhReptileQueueVO" parameterType="com.cd.qlyhk.vo.QlyRhReptileQueueVO">
+	   	<![CDATA[
+			insert into qly_rh_reptile_queue (content_url, create_user, isload, create_datetime) values (#{content_url},#{create_user},#{isload},SYSDATE())
+	    ]]>
+	</insert>
+	
+	<update id="updateQlyRhReptileQueueVO" parameterType="com.cd.qlyhk.vo.QlyRhReptileQueueVO">
+        update qly_rh_reptile_queue
+        <set>
+            <if test="isload!=null">isload=#{isload},</if>
+            <if test="modify_datetime!=null">modify_datetime=#{modify_datetime}</if>
+        </set>
+        where content_url=#{content_url}
+    </update>
+    
+    <select id="queryFixedReptileQueues" resultType="com.cd.qlyhk.vo.QlyRhReptileQueueVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_reptile_queue WHERE isload = '0'
+		]]>
+	</select>
+	
+	<insert id="insertQlyRhReptileArticleVO" parameterType="com.cd.qlyhk.vo.QlyRhReptileArticleVO" keyProperty="id" useGeneratedKeys="true">
+	   	<![CDATA[
+			insert into qly_rh_reptile_article (category_id, uuid, article_title, article_url, pic_url, description, ispublic, audit_status, create_user, create_datetime
+			, source, edit_date, istop, collect_date, editor, share_text, modify_datetime) values 
+			(#{category_id}, #{uuid}, #{article_title}, #{article_url}, #{pic_url}, #{description}, #{ispublic}, #{audit_status}, #{create_user}, SYSDATE()
+			, #{source}, #{edit_date}, #{istop}, #{collect_date}, #{editor}, #{share_text}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<insert id="insertQlyRhReptileArticleDetailVO" parameterType="com.cd.qlyhk.vo.QlyRhReptileArticleDetailVO">
+	   	<![CDATA[
+			insert into qly_rh_article_detail (article_uuid, article_content) values (#{article_uuid}, #{article_content})
+	    ]]>
+	</insert>
+	
+	<insert id="insertQlyRhCompanyArticleVO" parameterType="com.cd.qlyhk.vo.QlyRhCompanyArticleVO">
+	   	<![CDATA[
+			insert into qly_rh_company_article (company_id, article_id) values (#{company_id}, #{article_id})
+	    ]]>
+	</insert>
+	
+	<insert id="batchInsertArticleAndCategory" parameterType="map">
+	   	<![CDATA[
+			insert into qly_rh_article_category (article_id, category_id) values 
+	    ]]>
+	    <foreach collection="list" item="dt" separator=",">
+			(#{dt.article_id},#{dt.category_id})
+		</foreach>
+	</insert>
+	
+	<select id="getArticleDetailInfo" parameterType="string" resultType="map">
+		<![CDATA[
+			SELECT a.article_title, a.article_url, a.pic_url, a.description, a.share_text, d.article_content FROM qly_rh_reptile_article a 
+			INNER JOIN qly_rh_article_detail d ON a.uuid = d.article_uuid 
+			WHERE a.uuid = #{articleId}
+		]]>
+	</select>
+	
+	<!-- 查询我的文章 -->
+	<select id="queryMyArticle" parameterType="map" resultType="map">
+		<![CDATA[
+			call p_qly_rh_get_myarticle(#{openId}, #{source})
+		]]>
+	</select>
+	
+	<!-- 查询我编辑的文章 -->
+	<select id="queryMyEditArticle" parameterType="string" resultType="map">
+		<![CDATA[
+			SELECT uuid AS rh_article_id, article_title, pic_url FROM qly_rh_reptile_article
+			WHERE create_user = #{openId} AND editor = 'Y'
+		]]>
+		ORDER BY modify_datetime DESC
+	</select>
+	
+	<!-- 文章管理 -->
+	<sql id="queryAdminArticles_condition">
+		<where>
+		    1 = 1
+			<if test="category_id != null "><![CDATA[ AND c.category_id = #{category_id}]]></if>
+			<if test="article_title != null and article_title != ''"><![CDATA[ AND a.article_title like CONCAT(CONCAT('%',#{article_title},'%'))]]></if>
+			<if test="source != null "><![CDATA[ AND a.source like CONCAT(CONCAT('%',#{source},'%'))]]></if>
+			<if test="istop != null "><![CDATA[ AND a.istop = #{istop}]]></if>
+			<if test="audit_user != null "><![CDATA[ AND a.audit_user = #{audit_user}]]></if>
+			<if test='audit_status != null and audit_status == "Y" '><![CDATA[ AND a.audit_status = '02']]></if>
+			<if test='audit_status != null and audit_status == "N" '><![CDATA[ AND (a.audit_status = '01' OR a.audit_status = '03')]]></if>
+			<if test="user_name != null "><![CDATA[ AND u.user_name like CONCAT(CONCAT('%',#{user_name},'%'))]]></if>
+			<if test="collect_startDate !=null and collect_startDate != ''">
+				AND Date(a.collect_date) <![CDATA[>=]]> #{collect_startDate}
+			</if>
+			<if test="collect_endDate !=null and collect_endDate != ''">
+				AND Date(a.collect_date) <![CDATA[<=]]> #{collect_endDate}
+			</if>
+			
+			<if test="share_startNum !=null and share_startNum != 0">
+				AND s.total_share_num <![CDATA[>=]]> #{share_startNum}
+			</if>
+			<if test="share_endNum !=null and share_endNum != 0">
+				AND s.total_share_num <![CDATA[<=]]> #{share_endNum}
+			</if>
+			
+			<if test="read_startNum !=null and read_startNum != 0">
+				AND s.total_read_num <![CDATA[>=]]> #{read_startNum}
+			</if>
+			<if test="read_endNum !=null and read_endNum != 0">
+				AND s.total_read_num <![CDATA[<=]]> #{read_endNum}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="queryAdminArticlesListCount" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT a.uuid,a.article_title FROM qly_rh_reptile_article a
+			LEFT JOIN qly_rh_user u ON a.create_user = u.openId 
+			LEFT JOIN qly_rh_article_statistics s ON a.uuid = s.article_uuid 
+		]]>
+		<if test="category_id != null ">
+			LEFT JOIN qly_rh_article_category c ON a.id = c.article_id
+		</if>
+		<include refid="queryAdminArticles_condition" />
+		) q
+	</select>
+	
+	<select id="queryAdminArticlesList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT a.uuid, a.article_title, a.article_url, a.pic_url, a.description, a.audit_status, u.user_name AS create_user, u.openId, a.audit_user, a.source, a.edit_date, a.istop, a.collect_date
+			, s.total_share_num AS share_num, s.total_read_num AS read_num 
+			FROM qly_rh_reptile_article a
+			LEFT JOIN qly_rh_user u ON a.create_user = u.openId 
+			LEFT JOIN qly_rh_article_statistics s ON a.uuid = s.article_uuid 
+		]]>
+		<if test="category_id != null ">
+			LEFT JOIN qly_rh_article_category c ON a.id = c.article_id
+		</if>
+		<include refid="queryAdminArticles_condition" />
+		
+		<if test='collectDate_sort != null and collectDate_sort == "R"'>ORDER BY collect_date ASC</if>
+		<if test='collectDate_sort != null and collectDate_sort == "D"'>ORDER BY collect_date DESC</if>
+		<if test='collectDate_sort != null and shareNum_sort == "R"'>,share_num ASC</if>
+		<if test='collectDate_sort != null and shareNum_sort == "D"'>,share_num DESC</if>
+		<if test='collectDate_sort != null and readNum_sort == "R"'>,read_num ASC</if>
+		<if test='collectDate_sort != null and readNum_sort == "D"'>,read_num DESC</if>
+		
+		<if test='collectDate_sort == null and shareNum_sort == "R"'>ORDER BY share_num ASC</if>
+		<if test='collectDate_sort == null and shareNum_sort == "D"'>ORDER BY share_num DESC</if>
+		
+		<if test='collectDate_sort == null and shareNum_sort != null and readNum_sort == "R"'>,read_num ASC</if>
+		<if test='collectDate_sort == null and shareNum_sort != null and readNum_sort == "D"'>,read_num DESC</if>
+		
+		<if test='collectDate_sort == null and shareNum_sort == null and readNum_sort == "R"'>ORDER BY read_num ASC</if>
+		<if test='collectDate_sort == null and shareNum_sort == null and readNum_sort == "D"'>ORDER BY read_num DESC</if>
+		
+		<if test='collectDate_sort == null and shareNum_sort == null and readNum_sort == null'>ORDER BY collect_date DESC</if>
+	</select>
+	
+	<!-- 文章详情 -->
+	<select id="queryArticleInfo" parameterType="string" resultType="map">
+		<![CDATA[
+			SELECT a.*, d.article_content, GROUP_CONCAT(sc.category_name) AS category_name, s.total_share_num AS share_num, s.total_read_num AS read_num
+			FROM qly_rh_reptile_article a
+			LEFT JOIN qly_rh_article_detail d ON a.uuid = d.article_uuid
+			LEFT JOIN qly_rh_article_category c ON a.id = c.article_id
+			LEFT JOIN qly_rh_sys_category sc ON c.category_id = sc.category_id
+			LEFT JOIN qly_rh_article_statistics s ON a.uuid = s.article_uuid
+			WHERE a.uuid = #{uuid}
+		]]>
+	</select>
+	
+	<select id="getArticleMpDate" parameterType="string" resultType="string">
+		<![CDATA[
+			select mp_date from qly_rh_morningpaper_article where article_uuid = #{uuid} ORDER BY id DESC LIMIT 1
+		]]>
+	</select>
+	
+	<sql id="article_updateSet">
+		<set>
+      		<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+      		<if test="modify_user != null"> modify_user = #{modify_user}, </if>
+      		<if test="istop != null"> istop = #{istop}, </if>
+      		<if test="audit_status != null"> audit_status = #{audit_status}, </if>
+      		<if test="audit_user != null"> audit_user = #{audit_user}, </if>
+      		<if test="article_title != null"> article_title = #{article_title}, </if>
+      		<if test="pic_url != null"> pic_url = #{pic_url}, </if>
+      		<if test="description != null"> description = #{description}, </if>
+      		<if test="share_text != null"> share_text = #{share_text}, </if>
+		</set>
+	</sql>
+	
+	<update id="updateReptileArticle" parameterType="com.cd.qlyhk.vo.QlyRhReptileArticleVO">
+		<![CDATA[
+			update qly_rh_reptile_article 
+		]]>
+		<include refid="article_updateSet" />
+		<![CDATA[
+			where uuid = #{uuid}
+		]]>
+	</update>
+	
+	<!-- 文章归属类别列表 -->
+	<select id="queryArticleCategoryList" parameterType="string" resultType="map">
+		<![CDATA[
+			SELECT sc.category_id,sc.category_name,sc.type,c.istop
+			FROM qly_rh_reptile_article a
+			LEFT JOIN qly_rh_article_category c ON a.id = c.article_id
+			LEFT JOIN qly_rh_sys_category sc ON c.category_id = sc.category_id
+			WHERE a.uuid = #{uuid}
+		]]>
+	</select>
+	
+	<!-- 文章单条记录查询 -->
+	<select id="getReptileArticleVOByuuid" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhReptileArticleVO">
+		<![CDATA[
+			SELECT a.*, c.company_id FROM qly_rh_reptile_article a 
+			LEFT JOIN qly_rh_company_article c ON a.id = c.article_id
+			WHERE a.uuid = #{uuid}
+		]]>
+	</select>
+	
+	<delete id="deleteArticleCategory" parameterType="Integer">
+		<![CDATA[
+	    	delete from qly_rh_article_category where article_id = #{articleId}
+	    ]]>
+	</delete>
+	
+	<sql id="articleDetail_updateSet">
+		<set>
+      		<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+      		<if test="modify_user != null"> modify_user = #{modify_user}, </if>
+      		<if test="article_content != null"> article_content = #{article_content}, </if>
+		</set>
+	</sql>
+	
+	<update id="updateReptileArticleDetail" parameterType="com.cd.qlyhk.vo.ReqReptileArticleDetailDTO">
+		<![CDATA[
+			update qly_rh_article_detail 
+		]]>
+		<include refid="articleDetail_updateSet" />
+		<![CDATA[
+			where article_uuid = #{uuid}
+		]]>
+	</update>
+	
+	<!-- 查询文章分享及阅读情况列表 -->
+	<select id="queryAdminArticlesShareAndReadCount" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT a.uuid,a.article_title
+			FROM qly_rh_reptile_article a
+			LEFT JOIN qly_rh_user u ON a.create_user = u.openId
+			LEFT JOIN qly_rh_article_statistics s ON a.uuid = s.article_uuid 
+		]]>
+		<if test="category_id != null ">
+			LEFT JOIN qly_rh_article_category c ON a.id = c.article_id
+		</if>
+		<include refid="queryAdminArticles_condition" />
+		) q
+	</select>
+	
+	<select id="queryAdminArticlesShareAndReadList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT a.uuid, a.article_title, a.article_url, a.pic_url, a.description, a.audit_status, u.user_name AS create_user, u.openId, a.audit_user, a.source, a.edit_date, a.istop, a.collect_date
+			, s.total_share_num AS share_num, s.total_read_num AS read_num 
+			FROM qly_rh_reptile_article a
+			LEFT JOIN qly_rh_user u ON a.create_user = u.openId
+			LEFT JOIN qly_rh_article_statistics s ON a.uuid = s.article_uuid 
+		]]>
+		<if test="category_id != null ">
+			LEFT JOIN qly_rh_article_category c ON a.id = c.article_id
+		</if>
+		<include refid="queryAdminArticles_condition" />
+		ORDER BY a.create_datetime DESC
+	</select>
+	
+	<sql id="queryUserSORArticle_condition">
+		<if test="user_name != null"> <![CDATA[ AND u.user_name like CONCAT(CONCAT('%',#{user_name},'%'))]]></if>
+		<if test="company != null"> AND u.company like CONCAT(CONCAT('%',#{company},'%')) </if>
+		<if test="position != null"> AND u.position like CONCAT(CONCAT('%',#{position},'%')) </if>
+		<if test="city != null"> <![CDATA[ AND u.city like CONCAT(CONCAT('%',#{city},'%'))]]></if>
+		<!-- 
+		<if test="register_startDate !=null and register_startDate != ''">
+			AND u.register_date <![CDATA[>=]]> #{register_startDate}
+		</if>
+		<if test="register_endDate !=null and register_endDate != ''">
+			AND u.register_date <![CDATA[<=]]> #{register_endDate}
+		</if>
+		 -->
+		<if test="share_startDate !=null and share_startDate != ''">
+			AND s.share_date <![CDATA[>=]]> #{share_startDate}
+		</if>
+		<if test="share_endDate !=null and share_endDate != ''">
+			AND s.share_date <![CDATA[<=]]> #{share_endDate}
+		</if>
+		<if test="read_startDate !=null and read_startDate != ''">
+			AND r.read_date <![CDATA[>=]]> #{read_startDate}
+		</if>
+		<if test="read_endDate !=null and read_endDate != ''">
+			AND r.read_date <![CDATA[<=]]> #{read_endDate}
+		</if>
+	</sql>
+	
+	<select id="queryAdminArticlesShareUserList" parameterType="com.cd.qlyhk.vo.ReqArticleShareReadDTO" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, u.headImgUrl, ifnull(u.company,'') AS company, ifnull(u.position,'') AS position, ifnull(u.city,'') AS city, s.share_date
+			FROM qly_rh_share s
+			LEFT JOIN qly_rh_user u ON s.sharer = u.openId
+			WHERE s.article_uuid = #{articleId}
+		]]>
+		<include refid="queryUserSORArticle_condition" />
+		ORDER BY s.share_date DESC
+	</select>
+	
+	<select id="queryAdminArticlesReadUserList" parameterType="com.cd.qlyhk.vo.ReqArticleShareReadDTO" resultType="map">
+		<![CDATA[
+			SELECT r.user_name, r.headImgUrl, u.openId, ifnull(u.company,'') AS company, ifnull(u.position,'') AS position, ifnull(u.city,'') AS city, MAX(r.read_date) AS read_date
+			FROM qly_rh_share_record r
+			INNER JOIN qly_rh_share s ON r.share_id = s.share_id
+			LEFT JOIN qly_rh_user u ON r.visitor_id = u.openId
+			WHERE s.article_uuid = #{articleId}
+		]]>
+		<include refid="queryUserSORArticle_condition" />
+		GROUP BY u.openId
+		ORDER BY r.read_date DESC
+	</select>
+	
+	<insert id="insertArticleUselog" parameterType="com.cd.qlyhk.vo.QlyRhArticleUselogVO">
+	   	<![CDATA[
+			insert into qly_rh_article_uselog (article_uuid, article_title, use_date, order_index, create_user, create_datetime) values 
+			(#{article_uuid},#{article_title},#{use_date},#{order_index},#{create_user},SYSDATE())
+	    ]]>
+	</insert>
+	
+	<select id="queryPushSubscribeArticleCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM (
+				SELECT l.* FROM qly_rh_subscribe s
+				INNER JOIN qly_rh_article_category c ON s.category_id = c.category_id
+				INNER JOIN qly_rh_reptile_article a ON c.article_id = a.id
+				INNER JOIN qly_rh_article_uselog l ON a.uuid = l.article_uuid
+				WHERE s.user_id = #{userId} and l.use_date = #{use_date}
+				GROUP BY l.article_title
+			) q
+		]]>
+	</select>
+	
+	<select id="queryPushSubscribeArticleList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT DISTINCT l.article_uuid, l.article_title
+			FROM qly_rh_subscribe s
+			INNER JOIN qly_rh_article_category c ON s.category_id = c.category_id
+			INNER JOIN qly_rh_reptile_article a ON c.article_id = a.id
+			INNER JOIN qly_rh_article_uselog l ON a.uuid = l.article_uuid
+			WHERE s.user_id = #{userId} and l.use_date = #{use_date}
+			ORDER BY l.create_datetime DESC
+			LIMIT 5
+		]]>
+	</select>
+	
+	<!-- 勿扰模式下，统计阅读情况 -->
+	<select id="getTotalReadersByTimeQuantum" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT visitor_id) AS recordNum
+			FROM qly_rh_share_record
+			WHERE (IFNULL(visitor_id, '') != '')
+			AND sharer = #{openId}
+			AND visit_date >= STR_TO_DATE(#{startTime},'%Y-%m-%d %H:%i:%s')
+			AND visit_date <= STR_TO_DATE(#{endTime},'%Y-%m-%d %H:%i:%s')
+		]]>
+	</select>
+	
+	<!-- 删除文章 -->
+	<delete id="delArticle" parameterType="map">
+		{call p_qly_rh_del_article('${uuid}')}
+	</delete>
+	
+	<!-- 文章归属类别 -->
+	<select id="getArticleCategoryName" parameterType="string" resultType="string">
+		<![CDATA[
+			SELECT GROUP_CONCAT(ifnull(sc.category_name, '')) AS category_name FROM qly_rh_reptile_article r
+			INNER JOIN qly_rh_article_category c ON r.id = c.article_id
+			INNER JOIN qly_rh_sys_category sc ON c.category_id = sc.category_id
+			WHERE r.uuid = #{article_uuid}
+		]]>
+	</select>
+	
+	<!-- 首页跳转到文章分享及阅读情况列表 -->
+	<select id="queryAdminArticlesShareCountFromIndex" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT a.uuid,a.article_title
+			FROM qly_rh_share rs
+			INNER JOIN qly_rh_reptile_article a ON rs.article_uuid = a.uuid
+			LEFT JOIN qly_rh_user u ON a.create_user = u.openId
+			LEFT JOIN qly_rh_article_statistics s ON a.uuid = s.article_uuid
+			WHERE rs.share_date = #{todayDate}
+		]]>
+		GROUP BY a.uuid,a.article_title
+		) q
+	</select>
+	
+	<select id="queryAdminArticlesShareListFromIndex" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT a.uuid, a.article_title, a.article_url, a.pic_url, a.description, a.audit_status, u.user_name AS create_user, u.openId, a.audit_user, a.source, a.edit_date, a.istop, a.collect_date
+			, s.total_share_num AS share_num, s.total_read_num AS read_num 
+			FROM qly_rh_share rs
+			INNER JOIN qly_rh_reptile_article a ON rs.article_uuid = a.uuid
+			LEFT JOIN qly_rh_user u ON a.create_user = u.openId
+			LEFT JOIN qly_rh_article_statistics s ON a.uuid = s.article_uuid
+			WHERE rs.share_date = #{todayDate} 
+		]]>
+		GROUP BY a.uuid,a.article_title
+		ORDER BY a.create_datetime DESC
+	</select>
+	
+	<select id="queryAdminArticlesReadCountFromIndex" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT a.uuid,a.article_title
+			FROM qly_rh_share_record sr
+			INNER JOIN qly_rh_share rs ON sr.share_id = rs.share_id
+			INNER JOIN qly_rh_reptile_article a ON rs.article_uuid = a.uuid
+			LEFT JOIN qly_rh_user u ON a.create_user = u.openId
+			LEFT JOIN qly_rh_article_statistics s ON a.uuid = s.article_uuid
+			WHERE sr.read_date = #{todayDate}
+		]]>
+		GROUP BY a.uuid,a.article_title
+		) q
+	</select>
+	
+	<select id="queryAdminArticlesReadListFromIndex" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT a.uuid, a.article_title, a.article_url, a.pic_url, a.description, a.audit_status, u.user_name AS create_user, u.openId, a.audit_user, a.source, a.edit_date, a.istop, a.collect_date
+			, s.total_share_num AS share_num, s.total_read_num AS read_num 
+			FROM qly_rh_share_record sr
+			INNER JOIN qly_rh_share rs ON sr.share_id = rs.share_id
+			INNER JOIN qly_rh_reptile_article a ON rs.article_uuid = a.uuid
+			LEFT JOIN qly_rh_user u ON a.create_user = u.openId
+			LEFT JOIN qly_rh_article_statistics s ON a.uuid = s.article_uuid
+			WHERE sr.read_date = #{todayDate} 
+		]]>
+		GROUP BY a.uuid,a.article_title
+		ORDER BY a.create_datetime DESC
+	</select>
+	
+	<select id="getTotalWeekShareNum" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT article_title) shareNum FROM qly_rh_share
+			WHERE sharer = #{openId} 
+		]]>
+		<if test="share_startDate !=null and share_startDate != ''">
+			AND share_date <![CDATA[>=]]> #{share_startDate}
+		</if>
+		<if test="share_endDate !=null and share_endDate != ''">
+			AND share_date <![CDATA[<=]]> #{share_endDate}
+		</if>
+	</select>
+	
+</mapper>

@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.MarketServiceImpl">
+    
+    <insert id="insertQlyRhUserStream" parameterType="com.cd.qlyhk.vo.QlyRhUserStreamVO">
+	   	<![CDATA[
+			insert into qly_rh_user_stream (user_id, stream_date, stream_type, partner, amount, balance, remark, create_datetime) values 
+			(#{user_id},#{stream_date},#{stream_type},#{partner},#{amount},#{balance},#{remark},SYSDATE())
+	    ]]>
+	</insert>
+	
+    <insert id="insertQlyRhUserAccount" parameterType="com.cd.qlyhk.vo.QlyRhUserAccountVO" keyProperty="id" useGeneratedKeys="true">
+	   	<![CDATA[
+			insert into qly_rh_user_account (user_id, member_grade, income_balance, miss_income, remark, create_datetime) values 
+			(#{user_id},#{member_grade},#{income_balance},#{miss_income},#{remark},SYSDATE())
+	    ]]>
+	</insert>
+
+	<update id="updateQlyRhUserAccount" parameterType="com.cd.qlyhk.vo.QlyRhUserAccountVO">
+		update qly_rh_user_account 
+		<set>
+            <if test="member_grade!=null">member_grade=#{member_grade},</if>
+            <if test="income_balance!=null">income_balance=#{income_balance},</if>
+            <if test="remark!=null">remark=#{remark},</if>
+            <if test="miss_income!=null">miss_income=#{miss_income},</if>
+            <if test="modify_datetime!=null">modify_datetime=#{modify_datetime}</if>
+        </set>
+		where user_id = #{user_id}
+	</update>
+	
+	<select id="getQlyRhUserAccountVO" parameterType="int" resultType="com.cd.qlyhk.vo.QlyRhUserAccountVO">
+		<![CDATA[
+			select * from qly_rh_user_account where user_id = #{userId} LIMIT 1
+		]]>
+	</select>
+	
+	<!-- 累计收益 -->
+	<select id="getQlyRhUserStreamTotalIncome" parameterType="map" resultType="Double">
+		<![CDATA[
+			SELECT SUM(amount) AS total_income FROM qly_rh_user_stream
+			WHERE user_id = #{userId}
+		]]>
+		<if test="total_type != null and total_type == 1 ">AND (stream_type = 10 OR stream_type = 20)</if>
+		<if test="total_type != null and total_type == 2 ">AND stream_type = 30</if>
+		<if test="stream_date != null ">AND stream_date = #{stream_date}</if>
+	</select>
+	
+	<!-- 查询收益余额列表 -->
+	<sql id="queryIncomeBalance_condition">
+		<where>
+		    s.user_id = #{userId}
+			<if test="start_date != null and start_date != ''"><![CDATA[ AND s.stream_date >= #{start_date}]]></if>
+			<if test="end_date != null and end_date != ''"><![CDATA[ AND s.stream_date <= #{end_date}]]></if>
+			<if test="stream_type != null and stream_type == 1 ">AND (s.stream_type = 10 OR s.stream_type = 20)</if>
+			<if test="stream_type != null and stream_type == 2 ">AND s.stream_type = 30</if>
+		</where>
+	</sql>
+	
+	<select id="queryIncomeBalanceCount" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT u.openId, u.user_name, u.headImgUrl, s.stream_type, s.amount, s.balance, DATE_FORMAT(s.create_datetime,'%Y-%m-%d %H:%i') AS stream_time, s.remark
+			FROM qly_rh_user_stream s
+			LEFT JOIN qly_rh_user u ON s.partner = u.openId
+		]]>
+		<include refid="queryIncomeBalance_condition" />
+		) q
+	</select>
+	
+	<select id="queryIncomeBalanceList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, u.headImgUrl, s.stream_type, s.amount, s.balance, DATE_FORMAT(s.create_datetime,'%Y-%m-%d %H:%i') AS stream_time, s.remark
+			FROM qly_rh_user_stream s
+			LEFT JOIN qly_rh_user u ON s.partner = u.openId
+		]]>
+		<include refid="queryIncomeBalance_condition" />
+		ORDER BY s.id DESC
+	</select>
+	
+	<!-- 查询我的伙伴列表 -->
+	<sql id="queryPartnerMember_condition">
+		<where>
+		    u.recommender = #{openId}
+			<if test="user_name != null and user_name != ''"><![CDATA[ AND u.user_name like CONCAT(CONCAT('%',#{user_name},'%'))]]></if>
+		</where>
+	</sql>
+	
+	<select id="queryPartnerMemberCount" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT u.user_id, u.openId, u.user_name, u.headImgUrl, u.register_date, a.member_grade
+			FROM qly_rh_user u
+			LEFT JOIN qly_rh_user_account a ON u.user_id = a.user_id
+		]]>
+		<include refid="queryPartnerMember_condition" />
+		) q
+	</select>
+	
+	<select id="queryPartnerMemberList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.user_id, u.openId, u.user_name, u.headImgUrl, u.register_date, a.member_grade
+			FROM qly_rh_user u
+			LEFT JOIN qly_rh_user_account a ON u.user_id = a.user_id
+		]]>
+		<include refid="queryPartnerMember_condition" />
+		ORDER BY u.user_id DESC
+	</select>
+	
+	<!-- 查询分销列表 -->
+	<sql id="queryRetail_condition">
+		<where>
+		    (IFNULL(u.openId, '') != '')
+			<if test="user_name != null and user_name != ''"><![CDATA[ AND u.user_name like CONCAT(CONCAT('%',#{user_name},'%'))]]></if>
+			<if test="recommender != null and recommender != ''"> AND u.recommender = #{recommender}</if>
+			<if test="member_grade != null and member_grade != ''"> AND member_grade = #{member_grade}</if>
+			<if test='is_recm != null and is_recm == "1"'> AND (IFNULL(u.recommender, '') != '')</if>
+			<if test='is_recm != null and is_recm == "0"'> AND (IFNULL(u.recommender, '') = '')</if>
+			
+			<if test="ib_startNum !=null and ib_startNum != 0">
+				AND s.total_income_balance <![CDATA[>=]]> #{ib_startNum}
+			</if>
+			<if test="ib_endNum !=null and ib_endNum != 0">
+				AND s.total_income_balance <![CDATA[<=]]> #{ib_endNum}
+			</if>
+			
+			<if test="ti_startNum !=null and ti_startNum != 0">
+				AND s.total_income <![CDATA[>=]]> #{ti_startNum}
+			</if>
+			<if test="ti_endNum !=null and ti_endNum != 0">
+				AND s.total_income <![CDATA[<=]]> #{ti_endNum}
+			</if>
+			
+			<if test="tc_startNum !=null and tc_startNum != 0">
+				AND s.total_cash_out <![CDATA[>=]]> #{tc_startNum}
+			</if>
+			<if test="tc_endNum !=null and tc_endNum != 0">
+				AND s.total_cash_out <![CDATA[<=]]> #{tc_endNum}
+			</if>
+			
+			<if test="pn_startNum !=null and pn_startNum != 0">
+				AND s.total_partner_num <![CDATA[>=]]> #{pn_startNum}
+			</if>
+			<if test="pn_endNum !=null and pn_endNum != 0">
+				AND s.total_partner_num <![CDATA[<=]]> #{pn_endNum}
+			</if>
+			
+		</where>
+	</sql>
+	
+	<select id="queryRetailCount" parameterType="map" resultType="Integer">
+		<![CDATA[ SELECT COUNT(1) FROM (
+			SELECT u.user_id, u.openId, u.user_name, u.headImgUrl, u.recommender, IFNULL(a.member_grade, 0) AS member_grade, s.total_income_balance,
+				s.total_income, s.total_cash_out, s.total_partner_num
+			FROM qly_rh_user u
+			LEFT JOIN qly_rh_user_account a ON u.user_id = a.user_id
+			LEFT JOIN qly_rh_market_statistics s ON u.openId = s.openId
+		]]>
+		<include refid="queryRetail_condition" />
+		) q
+	</select>
+	
+	<select id="queryRetailList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.user_id, u.openId, u.user_name, u.headImgUrl, u.recommender, IFNULL(a.member_grade, 0) AS member_grade, s.total_income_balance,
+				s.total_income, s.total_cash_out, s.total_partner_num
+			FROM qly_rh_user u
+			LEFT JOIN qly_rh_user_account a ON u.user_id = a.user_id
+			LEFT JOIN qly_rh_market_statistics s ON u.openId = s.openId
+		]]>
+		<include refid="queryRetail_condition" />
+		
+		<if test="orderName != null and orderName != '' and order != null and order != ''">
+			ORDER BY ${orderName} ${order}
+		</if>
+	</select>
+	
+	<!-- 获取伙伴的一级收益 -->
+	<select id="getPartnerTotalIncomeLevel1" parameterType="map" resultType="Double">
+		<![CDATA[
+			SELECT SUM(amount) AS total_income FROM qly_rh_user_stream
+			WHERE user_id = #{userId} AND partner = #{partnerOpenId} AND stream_type = '10'
+		]]>
+	</select>
+	
+	<!-- 获取伙伴的二级收益 -->
+	<select id="getPartnerTotalIncomeLevel2" parameterType="map" resultType="Double">
+		<![CDATA[
+			SELECT SUM(amount) AS total_income FROM qly_rh_user_stream
+			WHERE user_id = #{userId} AND stream_type = '20'
+			AND partner IN (SELECT openId FROM qly_rh_user WHERE recommender = #{partnerOpenId})
+		]]>
+	</select>
+	
+</mapper>

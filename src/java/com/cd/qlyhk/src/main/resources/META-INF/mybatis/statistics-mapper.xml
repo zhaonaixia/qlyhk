@@ -1,0 +1,569 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.StatisticsServiceImpl">
+    
+    <!-- 分享文章阅读情况统计 -->
+    <select id="queryShareStatistics" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhShareStatisticsVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_share_statistics WHERE sharer = #{openId} AND share_uuid = #{uuid} limit 1
+		]]>
+	</select>
+	
+	<update id="updateShareStatistics" parameterType="com.cd.qlyhk.vo.QlyRhShareStatisticsVO">
+        update qly_rh_share_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+            <if test="total_num!=null"> total_num = #{total_num},</if>
+            <if test="total_readers!=null"> total_readers = #{total_readers},</if>
+            <if test="share_num!=null"> share_num = #{share_num},</if>
+            <if test="share_readers!=null"> share_readers = #{share_readers},</if>
+        </set>
+        where sharer = #{sharer} AND share_uuid = #{share_uuid}
+    </update>
+    
+    <insert id="insertShareStatistics" parameterType="com.cd.qlyhk.vo.QlyRhShareStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_share_statistics (statistics_date, share_uuid, sharer, total_num, total_readers, share_num, share_readers, create_datetime) values 
+			(#{statistics_date}, #{share_uuid}, #{sharer}, #{total_num}, #{total_readers}, #{share_num}, #{share_readers}, SYSDATE())
+	    ]]>
+	</insert>
+    
+    <!-- 访客情况统计 -->
+    <select id="queryRecordStatistics" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhRecordStatisticsVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_record_statistics WHERE record_id = #{openId} limit 1
+		]]>
+	</select>
+	
+	<update id="updateRecordStatistics" parameterType="com.cd.qlyhk.vo.QlyRhRecordStatisticsVO">
+        update qly_rh_record_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+            <if test="total_num!=null"> total_num = #{total_num},</if>
+            <if test="total_reader_times!=null"> total_reader_times = #{total_reader_times},</if>
+            <if test="total_share!=null"> total_share = #{total_share},</if>
+        </set>
+        where record_id = #{record_id}
+    </update>
+    
+    <insert id="insertRecordStatistics" parameterType="com.cd.qlyhk.vo.QlyRhRecordStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_record_statistics (statistics_date, record_id, total_num, total_reader_times, total_share, create_datetime) values 
+			(#{statistics_date}, #{record_id}, #{total_num}, #{total_reader_times}, #{total_share}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<select id="queryRecordStatisticsUser" resultType="map">
+		<![CDATA[
+			select DISTINCT visitor_id,user_name from qly_rh_share_record where (IFNULL(visitor_id,'') != '')
+		]]>
+	</select>
+	
+	<!-- 文章分享及阅读情况统计 -->
+	<select id="queryShareAndReadArticleUuid" resultType="map">
+		<![CDATA[
+			SELECT DISTINCT article_uuid FROM qly_rh_share
+		]]>
+	</select>
+	
+	<select id="getTotalNumByArticleUUID" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS recordNum FROM qly_rh_share_record r
+			INNER JOIN qly_rh_share s ON r.share_id = s.share_id
+			WHERE s.article_uuid = #{article_uuid} AND (IFNULL(r.visitor_id,'') != '')
+		]]>
+	</select>
+	
+	<select id="getTotalShareNumByArticleUUID" parameterType="string" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS shareNum FROM qly_rh_share
+			WHERE article_uuid = #{article_uuid}
+		]]>
+	</select>
+	
+	<update id="updateArticleStatistics" parameterType="com.cd.qlyhk.vo.QlyRhArticleStatisticsVO">
+        update qly_rh_article_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+        	<if test="total_share_num!=null"> total_share_num = #{total_share_num},</if>
+            <if test="total_read_num!=null"> total_read_num = #{total_read_num},</if>
+        </set>
+        where article_uuid = #{article_uuid}
+    </update>
+    
+    <insert id="insertArticleStatistics" parameterType="com.cd.qlyhk.vo.QlyRhArticleStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_article_statistics (statistics_date, article_uuid, total_share_num, total_read_num, create_datetime) values 
+			(#{statistics_date}, #{article_uuid}, #{total_share_num}, #{total_read_num}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<!-- 用户分享及阅读情况统计 -->
+	<update id="updateUserStatistics" parameterType="com.cd.qlyhk.vo.QlyRhUserStatisticsVO">
+        update qly_rh_user_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+        	<if test="total_share_num!=null"> total_share_num = #{total_share_num},</if>
+            <if test="total_read_num!=null"> total_read_num = #{total_read_num},</if>
+            <if test="total_read_times!=null"> total_read_times = #{total_read_times},</if>
+        </set>
+        where openId = #{openId}
+    </update>
+    
+    <insert id="insertUserStatistics" parameterType="com.cd.qlyhk.vo.QlyRhUserStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_user_statistics (statistics_date, openId, total_share_num, total_read_num, total_read_times, create_datetime) values 
+			(#{statistics_date}, #{openId}, #{total_share_num}, #{total_read_num}, #{total_read_times}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<!-- 月度分享时段情况统计 -->
+	<select id="queryMonthlyShareList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT uuid,article_uuid,article_title,sharer,date_format(create_datetime,'%Y-%m-%d %H:%i:%s') AS date_time,share_date 
+			FROM qly_rh_share
+			WHERE share_date >= #{firstday} AND share_date <= #{lastday}
+		]]>
+	</select>
+	
+	<update id="updateMonthlyShareStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthlyShareStatisticsVO">
+        update qly_rh_monthly_share_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+        	<if test="data!=null"> data = #{data},</if>
+        </set>
+        where statistics_period = #{statistics_period}
+    </update>
+    
+    <insert id="insertMonthlyShareStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthlyShareStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_monthly_share_statistics (statistics_period, data, create_datetime) values (#{statistics_period}, #{data}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<select id="queryMonthlyShareStatistics" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhMonthlyShareStatisticsVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_monthly_share_statistics
+			WHERE statistics_period >= #{yearPeriodStart} AND statistics_period <= #{yearPeriodEnd}
+		]]>
+	</select>
+	
+	<!-- 月度阅读时段情况统计 -->
+	<select id="queryMonthlyReadList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT uuid,visitor_id,user_name,sharer,share_uuid,date_format(visit_date,'%Y-%m-%d %H:%i:%s') AS date_time,read_date 
+			FROM qly_rh_share_record
+			WHERE read_date >= #{firstday} AND read_date <= #{lastday}
+		]]>
+	</select>
+	
+	<update id="updateMonthlyReadStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthlyReadStatisticsVO">
+        update qly_rh_monthly_read_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+        	<if test="data!=null"> data = #{data},</if>
+        </set>
+        where statistics_period = #{statistics_period}
+    </update>
+    
+    <insert id="insertMonthlyReadStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthlyReadStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_monthly_read_statistics (statistics_period, data, create_datetime) values (#{statistics_period}, #{data}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<select id="queryMonthlyReadStatistics" parameterType="map" resultType="com.cd.qlyhk.vo.QlyRhMonthlyReadStatisticsVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_monthly_read_statistics
+			WHERE statistics_period >= #{yearPeriodStart} AND statistics_period <= #{yearPeriodEnd}
+		]]>
+	</select>
+	
+	<!-- 月度文章情况统计 -->
+	<select id="queryMonthlyArticlesList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT s.article_uuid,COUNT(r.share_uuid) AS read_num
+			FROM qly_rh_share s
+	  		INNER JOIN qly_rh_share_record r ON s.share_id = r.share_id
+			WHERE r.read_date >= #{firstday} AND r.read_date <= #{lastday}
+			GROUP BY s.article_uuid
+		]]>
+	</select>
+	
+	<update id="updateMonthlyArticlesStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthlyArticlesStatisticsVO">
+        update qly_rh_monthly_articles_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+        	<if test="total_share_num!=null"> total_share_num = #{total_share_num},</if>
+            <if test="total_read_num!=null"> total_read_num = #{total_read_num},</if>
+        </set>
+        where statistics_period = #{statistics_period} AND article_uuid = #{article_uuid}
+    </update>
+    
+    <insert id="insertMonthlyArticlesStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthlyArticlesStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_monthly_articles_statistics (statistics_period, article_uuid, total_share_num, total_read_num, create_datetime) values 
+				(#{statistics_period}, #{article_uuid}, #{total_share_num}, #{total_read_num}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<!-- 月度用户情况统计 -->
+	<select id="queryMonthlyUsersShareList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT s.sharer AS openId,COUNT(s.share_id) AS share_num
+			FROM qly_rh_share s
+			WHERE s.share_date >= #{firstday} AND s.share_date <= #{lastday}
+			GROUP BY s.sharer
+		]]>
+	</select>
+	
+	<update id="updateMonthlyUsersStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthlyUsersStatisticsVO">
+        update qly_rh_monthly_users_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+        	<if test="total_share_num!=null"> total_share_num = #{total_share_num},</if>
+            <if test="total_read_num!=null"> total_read_num = #{total_read_num},</if>
+        </set>
+        where statistics_period = #{statistics_period} AND openId = #{openId}
+    </update>
+    
+    <insert id="insertMonthlyUsersStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthlyUsersStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_monthly_users_statistics (statistics_period, openId, total_share_num, total_read_num, create_datetime) values 
+				(#{statistics_period}, #{openId}, #{total_share_num}, #{total_read_num}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<select id="queryMonthlyUsersReadList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT r.visitor_id AS openId,COUNT(r.uuid) AS read_num
+			FROM qly_rh_share s
+			INNER JOIN qly_rh_share_record r ON s.share_id = r.share_id
+			WHERE r.read_date >= #{firstday} AND r.read_date <= #{lastday}
+			GROUP BY r.visitor_id
+		]]>
+	</select>
+	<!-- 结束月度用户情况统计 -->
+	
+	<select id="queryHotArticlesList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT a.uuid AS article_uuid, a.article_title, s.total_read_num
+			FROM qly_rh_monthly_articles_statistics s
+			INNER JOIN qly_rh_reptile_article a ON s.article_uuid = a.uuid
+			WHERE s.statistics_period = #{month}
+			ORDER BY s.total_read_num DESC
+			LIMIT 0,10
+		]]>
+	</select>
+	
+	<select id="queryShareTalentsList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, s.total_share_num
+			FROM qly_rh_monthly_users_statistics s
+			INNER JOIN qly_rh_user u ON s.openId = u.openId
+			WHERE s.statistics_period = #{month}
+			ORDER BY s.total_share_num DESC
+			LIMIT 0,10
+		]]>
+	</select>
+	
+	<select id="queryReadTalentsList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, s.total_read_num
+			FROM qly_rh_monthly_users_statistics s
+			INNER JOIN qly_rh_user u ON s.openId = u.openId
+			WHERE s.statistics_period = #{month}
+			ORDER BY s.total_read_num DESC
+			LIMIT 0,10
+		]]>
+	</select>
+	
+	<!-- 更多热点文章 -->
+	<sql id="queryHotArticles_condition">
+		<where>
+		    <![CDATA[ s.statistics_period = #{month} ]]>
+		    <if test="article_title != null and article_title != ''"><![CDATA[ AND a.article_title like CONCAT(CONCAT('%',#{article_title},'%'))]]></if>
+			<if test="read_startNum !=null and read_startNum != 0">
+				AND s.total_read_num <![CDATA[>=]]> #{read_startNum}
+			</if>
+			<if test="read_endNum !=null and read_endNum != 0">
+				AND s.total_read_num <![CDATA[<=]]> #{read_endNum}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="queryMoreHotArticlesListCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM (
+				SELECT a.uuid AS article_uuid, a.article_title, s.total_read_num
+				FROM qly_rh_monthly_articles_statistics s
+				INNER JOIN qly_rh_reptile_article a ON s.article_uuid = a.uuid
+		]]>
+		<include refid="queryHotArticles_condition" />
+		) q
+	</select>
+	
+	<select id="queryMoreHotArticlesList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT a.uuid AS article_uuid, a.article_title, s.total_read_num
+			FROM qly_rh_monthly_articles_statistics s
+			INNER JOIN qly_rh_reptile_article a ON s.article_uuid = a.uuid
+		]]>
+		<include refid="queryHotArticles_condition" />
+		ORDER BY s.total_read_num DESC
+	</select>
+	
+	<!-- 更多达人-->
+	<sql id="queryTalents_condition">
+		<where>
+			<![CDATA[ s.statistics_period = #{month} ]]>
+		    <if test="user_name != null and user_name != ''"><![CDATA[ AND u.user_name like CONCAT(CONCAT('%',#{user_name},'%'))]]></if>
+		    <if test="read_startNum !=null and read_startNum != 0">
+				AND s.total_read_num <![CDATA[>=]]> #{read_startNum}
+			</if>
+			<if test="read_endNum !=null and read_endNum != 0">
+				AND s.total_read_num <![CDATA[<=]]> #{read_endNum}
+			</if>
+			<if test="share_startNum !=null and share_startNum != 0">
+				AND s.total_share_num <![CDATA[>=]]> #{share_startNum}
+			</if>
+			<if test="share_endNum !=null and share_endNum != 0">
+				AND s.total_share_num <![CDATA[<=]]> #{share_endNum}
+			</if>
+		</where>
+	</sql>
+	
+	<select id="queryMoreShareTalentsListCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM (
+				SELECT u.openId, u.user_name, s.total_share_num
+				FROM qly_rh_monthly_users_statistics s
+				INNER JOIN qly_rh_user u ON s.openId = u.openId
+		]]>
+		<include refid="queryTalents_condition" />
+		) q
+	</select>
+	
+	<select id="queryMoreShareTalentsList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, s.total_share_num
+			FROM qly_rh_monthly_users_statistics s
+			INNER JOIN qly_rh_user u ON s.openId = u.openId
+		]]>
+		<include refid="queryTalents_condition" />
+		ORDER BY s.total_share_num DESC
+	</select>
+	
+	<select id="queryMoreReadTalentsListCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM (
+				SELECT u.openId, u.user_name, s.total_read_num
+				FROM qly_rh_monthly_users_statistics s
+				INNER JOIN qly_rh_user u ON s.openId = u.openId
+		]]>
+		<include refid="queryTalents_condition" />
+		) q
+	</select>
+	
+	<select id="queryMoreReadTalentsList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.openId, u.user_name, s.total_read_num
+			FROM qly_rh_monthly_users_statistics s
+			INNER JOIN qly_rh_user u ON s.openId = u.openId
+		]]>
+		<include refid="queryTalents_condition" />
+		ORDER BY s.total_read_num DESC
+	</select>
+	
+	<!-- 累计用户 -->
+	<select id="queryUsersCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM qly_rh_user where (IFNULL(openId,'') != '')
+		]]>
+		<if test="create_datetime != null and create_datetime != ''"><![CDATA[ AND DATE_FORMAT(create_datetime,'%Y-%m-%d') = #{create_datetime}]]></if>
+		<if test="open_date != null and open_date != ''"><![CDATA[ AND open_date = #{open_date}]]></if>
+	</select>
+
+	<!-- 累计会员用户 -->
+	<select id="queryAllMembersCount" parameterType="String" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM qly_rh_user u
+			WHERE u.isMember = '1' AND u.member_end_date >= #{todayDate}
+		]]>
+	</select>
+	
+	<select id="queryUsersDistributionCount" parameterType="map" resultType="map">
+		<![CDATA[
+			call p_qly_rh_query_users_distribution(#{areaCode}, #{areaLevel}, #{dateTime})
+		]]>
+	</select>
+	
+	<!-- 今日分享文章数 -->
+	<select id="getTodayShareCount" parameterType="String" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS share_num FROM qly_rh_share WHERE share_date = #{todayDate}
+		]]>
+	</select>
+	
+	<!-- 今日阅读次数 -->
+	<select id="getTodayReadCount" parameterType="String" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) AS read_num FROM qly_rh_share_record WHERE read_date = #{todayDate}
+		]]>
+	</select>
+	
+	<!-- 累计访客数 -->
+	<select id="queryVisitorsCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM (
+				SELECT DISTINCT u.openId
+				FROM qly_rh_user u
+				INNER JOIN qly_rh_share_record r ON u.openId = r.visitor_id
+				WHERE (IFNULL(u.openId, '') != '')
+			) AS V
+		]]>
+	</select>
+	
+	<!-- 分销情况统计 -->
+	<select id="queryMarketUserList" parameterType="map" resultType="map">
+		<![CDATA[
+			SELECT u.user_id, u.openId, u.recommender, IFNULL(a.income_balance, 0) AS income_balance FROM qly_rh_user u
+			LEFT JOIN qly_rh_user_account a ON u.user_id = a.user_id
+			WHERE (IFNULL(u.openId, '') != '')
+		]]>
+	</select>
+	
+	<update id="updateMarketStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMarketStatisticsVO">
+        update qly_rh_market_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+            <if test="total_income_balance!=null"> total_income_balance = #{total_income_balance},</if>
+            <if test="total_income!=null"> total_income = #{total_income},</if>
+            <if test="total_cash_out!=null"> total_cash_out = #{total_cash_out},</if>
+            <if test="total_partner_num!=null"> total_partner_num = #{total_partner_num},</if>
+        </set>
+        where openId = #{openId}
+    </update>
+    
+    <insert id="insertMarketStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMarketStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_market_statistics (statistics_date, openId, total_income_balance, total_income, total_cash_out, total_partner_num, create_datetime) values 
+			(#{statistics_date}, #{openId}, #{total_income_balance}, #{total_income}, #{total_cash_out}, #{total_partner_num}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<!-- 月度报表情况统计 -->
+	<select id="queryMonthAddUsersCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM qly_rh_user where (IFNULL(openId,'') != '') AND register_date >= #{monthFirstDay} AND register_date <= #{monthLastDay}
+		]]>
+	</select>
+	
+	<select id="queryMonthAddMembersCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM (
+				SELECT u.user_id, COUNT(o.order_id) AS order_num FROM qly_rh_user u
+				INNER JOIN qly_rh_order o ON u.user_id = o.create_user_id AND o.pay_status = '1'
+				WHERE (IFNULL(u.openId, '') != '') AND u.isMember = '1' AND u.open_date >= #{monthFirstDay} AND u.open_date <= #{monthLastDay}
+				GROUP BY u.user_id
+			) T
+			WHERE T.order_num = 1
+		]]>
+	</select>
+	
+	<select id="queryMonthTotalReadNum" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM qly_rh_share_record
+			WHERE read_date >= #{monthFirstDay} AND read_date <= #{monthLastDay}
+		]]>
+	</select>
+	
+	<select id="queryMonthTotalShareNum" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM qly_rh_share
+			WHERE share_date >= #{monthFirstDay} AND share_date <= #{monthLastDay}
+		]]>
+	</select>
+	
+	<select id="queryMonthTotalMpReadNum" parameterType="map" resultType="Integer">
+		<![CDATA[
+		SELECT COUNT(1) FROM qly_rh_share_record r
+		WHERE r.share_id IN (
+				SELECT share_id FROM qly_rh_share s
+				INNER JOIN qly_rh_morningpaper_article m ON s.article_uuid = m.article_uuid
+			) AND r.read_date >= #{monthFirstDay} AND r.read_date <= #{monthLastDay}
+		]]>
+	</select>
+	
+	<select id="queryMonthTotalMpShareNum" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(DISTINCT s.share_id) FROM qly_rh_share s
+			INNER JOIN qly_rh_morningpaper_article m ON s.article_uuid = m.article_uuid
+			WHERE s.share_date >= #{monthFirstDay} AND s.share_date <= #{monthLastDay}
+		]]>
+	</select>
+	
+	<select id="queryMonthBuyHyNum" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM qly_rh_order
+			WHERE pay_status = '1' AND order_type = #{orderType}
+				AND DATE_FORMAT(create_datetime, '%Y-%m-%d') >= #{monthFirstDay}
+				AND DATE_FORMAT(create_datetime, '%Y-%m-%d') <= #{monthLastDay}
+		]]>
+	</select>
+	
+	<select id="queryMonthMemberValidNum" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM qly_rh_user
+			WHERE (IFNULL(openId, '') != '')
+				AND isMember = '1'
+				AND member_end_date >= #{monthLastDay}
+		]]>
+	</select>
+	
+	<select id="queryMonthMemberExpireNum" parameterType="map" resultType="Integer">
+		<![CDATA[
+			SELECT COUNT(1) FROM qly_rh_user
+			WHERE (IFNULL(openId, '') != '')
+				AND isMember = '1'
+				AND member_end_date < #{monthLastDay}
+		]]>
+	</select>
+	
+	<update id="updateMonthStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthStatisticsVO">
+        update qly_rh_monthly_statistics
+        <set>
+        	<if test="modify_datetime != null"> modify_datetime = #{modify_datetime}, </if>
+            <if test="add_user_num!=null"> add_user_num = #{add_user_num},</if>
+            <if test="add_member_num!=null"> add_member_num = #{add_member_num},</if>
+            <if test="total_read_num!=null"> total_read_num = #{total_read_num},</if>
+            <if test="total_share_num!=null"> total_share_num = #{total_share_num},</if>
+            <if test="total_mp_read_num!=null"> total_mp_read_num = #{total_mp_read_num},</if>
+            <if test="total_mp_share_num!=null"> total_mp_share_num = #{total_mp_share_num},</if>
+            <if test="buy_byhy_num!=null"> buy_byhy_num = #{buy_byhy_num},</if>
+            <if test="buy_hjhy_num!=null"> buy_hjhy_num = #{buy_hjhy_num},</if>
+            <if test="buy_zshy_num!=null"> buy_zshy_num = #{buy_zshy_num},</if>
+            <if test="member_valid_num!=null"> member_valid_num = #{member_valid_num},</if>
+            <if test="member_expire_num!=null"> member_expire_num = #{member_expire_num},</if>
+        </set>
+        where statistics_period = #{statistics_period}
+    </update>
+    
+    <insert id="insertMonthStatistics" parameterType="com.cd.qlyhk.vo.QlyRhMonthStatisticsVO">
+	   	<![CDATA[
+			insert into qly_rh_monthly_statistics (statistics_period, add_user_num, add_member_num, total_read_num, total_share_num, total_mp_read_num, total_mp_share_num
+			, buy_byhy_num, buy_hjhy_num, buy_zshy_num, member_valid_num, member_expire_num, create_datetime) values 
+			(#{statistics_period}, #{add_user_num}, #{add_member_num}, #{total_read_num}, #{total_share_num}, #{total_mp_read_num}, #{total_mp_share_num}
+			, #{buy_byhy_num}, #{buy_hjhy_num}, #{buy_zshy_num}, #{member_valid_num}, #{member_expire_num}, SYSDATE())
+	    ]]>
+	</insert>
+	<!-- 月度报表情况统计结束 -->
+	
+	<!-- 查询月度报表列表 -->
+	<select id="getMonthStatistics" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhMonthStatisticsVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_monthly_statistics WHERE statistics_period = #{statistics_period}
+		]]>
+	</select>
+	
+</mapper>

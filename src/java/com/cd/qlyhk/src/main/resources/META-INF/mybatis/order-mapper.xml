@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.cd.qlyhk.service.impl.OrderServiceImpl">
+
+	<insert id="insertQlyRhOrder" parameterType="com.cd.qlyhk.vo.QlyRhOrderVO" keyProperty="order_id" useGeneratedKeys="true">
+	   	<![CDATA[
+			insert into qly_rh_order (lsh, money, pay_status, start_date, end_date, status, remark, create_user_id, create_datetime, order_type) values 
+			(#{lsh},#{money},#{pay_status},#{start_date},#{end_date},#{status},#{remark},#{create_user_id},SYSDATE(), #{order_type})
+	    ]]>
+	</insert>
+	
+	<insert id="insertQlyRhUserOrderPackage" parameterType="com.cd.qlyhk.vo.QlyRhUserOrderPackageVO">
+	   	<![CDATA[
+			insert into qly_rh_user_order_package (user_id, order_id, package_id) values (#{user_id},#{order_id},#{package_id})
+	    ]]>
+	</insert>
+	
+	<insert id="insertQlyRhWithdrawLog" parameterType="com.cd.qlyhk.vo.QlyRhWithdrawLogVO">
+	   	<![CDATA[
+			insert into qly_rh_withdraw_log (openId, partner_trade_no, real_name, amount, ip_address, status, return_data, create_datetime) 
+			values (#{openId}, #{partner_trade_no}, #{real_name}, #{amount}, #{ip_address}, #{status}, #{return_data}, SYSDATE())
+	    ]]>
+	</insert>
+	
+	<update id="updateOrderPayStatus" parameterType="map">
+		<![CDATA[
+			update qly_rh_order set pay_status = #{payStatus},modify_datetime = SYSDATE() where lsh = #{orderId}
+		]]>
+	</update>
+	
+	<update id="updateOrderStatus" parameterType="map">
+		<![CDATA[
+			update qly_rh_order set status = #{status},modify_datetime = SYSDATE() where lsh = #{orderId}
+		]]>
+	</update>
+	
+    <select id="queryQlyRhPackage" resultType="com.cd.qlyhk.vo.QlyRhPackageVO">
+		<![CDATA[
+			select * from qly_rh_package where record_state &1=1 ORDER BY price DESC
+		]]>
+	</select>
+	
+	<select id="getQlyRhPackage" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhPackageVO">
+		<![CDATA[
+			select * from qly_rh_package where uuid = #{packageId} and record_state &1=1
+		]]>
+	</select>
+	
+	<select id="getQlyRhOrder" parameterType="string" resultType="com.cd.qlyhk.vo.QlyRhOrderVO">
+		<![CDATA[
+			select * from qly_rh_order where lsh = #{orderId} 
+		]]>
+	</select>
+	
+	<select id="getMaxValidOrderDate" parameterType="map" resultType="string">
+		<![CDATA[
+			SELECT MAX(end_date) as end_date FROM qly_rh_order
+			WHERE pay_status = '1' AND `status` = '01'
+			AND create_user_id = #{userId}  AND Date(end_date) >= #{dateTime}
+		]]>
+	</select>
+	
+	<select id="getQlyRhOrderLately" parameterType="int" resultType="com.cd.qlyhk.vo.QlyRhOrderVO">
+		<![CDATA[
+			SELECT * FROM qly_rh_order o 
+			WHERE o.create_user_id = #{userId}  AND o.pay_status = '1' AND o.`status` = '01'
+			ORDER BY o.order_id DESC
+			LIMIT 1
+		]]>
+	</select>
+	
+	<select id="getQlyRhOrderOntriaCount" parameterType="map" resultType="Integer">
+		<![CDATA[
+			select COUNT(order_id) from qly_rh_order where pay_status = '1' and create_user_id = #{userId} and money = #{price}
+		]]>
+	</select>
+	
+	<select id="getOrderTotalAmount" parameterType="int" resultType="Double">
+		<![CDATA[
+			SELECT SUM(o.money) AS total_money FROM qly_rh_order o
+			WHERE o.create_user_id = #{userId} AND o.pay_status = '1' AND o.`status` = '01'
+		]]>
+	</select>
+	
+</mapper>

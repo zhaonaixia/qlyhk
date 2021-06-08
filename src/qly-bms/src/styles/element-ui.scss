@@ -1,0 +1,162 @@
+// cover some element-ui styles
+
+.el-breadcrumb__inner,
+.el-breadcrumb__inner a {
+  font-weight: 400 !important;
+}
+
+.el-upload {
+  input[type="file"] {
+    display: none !important;
+  }
+}
+
+.el-upload__input {
+  display: none;
+}
+
+
+// to fixed https://github.com/ElemeFE/element/issues/2461
+.el-dialog {
+  transform: none;
+  left: 0;
+  position: relative;
+  margin: 0 auto;
+}
+
+// refine element ui upload
+.upload-container {
+  .el-upload {
+    width: 100%;
+
+    .el-upload-dragger {
+      width: 100%;
+      height: 200px;
+    }
+  }
+}
+.el-button--primary{
+  background-color: #3487E2;
+  border-color: #3487E2;
+}
+.el-form-item {
+  margin-bottom: 5px;
+}
+// dropdown
+.el-dropdown-menu {
+  a {
+    display: block
+  }
+}
+
+// to fix el-date-picker css style
+.el-range-separator {
+  box-sizing: content-box;
+}
+.el-table__body{
+  font-size: 13px !important;
+  margin-bottom: 1px;
+}
+.el-table td {
+  padding: 6px 0px !important;
+}
+.el-table__header-wrapper{
+  // margin-top: 10px !important;
+}
+.el-table__header{
+  .caret-wrapper{
+    padding: 0px !important;
+    margin: 0px !important;
+  }
+  font-size: 14px !important;
+  line-height: 10px !important;
+  background: #fcfcfc!important;
+}
+// 表格表头高度
+.el-table__header tr{
+  height: 40px;
+}
+// 表格表头颜色
+.el-table__header th{
+  background: #fcfcfc!important;
+}
+// 表格内容行高度
+.el-table__row{
+  height: 44px;
+}
+.el-table {
+  tr {
+    td{
+      border: 1px solid transparent;
+    }
+    td:first-child {
+      border-left: 1px solid transparent;
+    }
+    td:last-child {
+      border-right: 1px solid transparent;
+    }
+    td {
+      border-top: 1px solid transparent;
+      border-bottom: 1px solid transparent;
+    }
+    &:hover, &:focus {
+      
+      // td:first-child {
+      //   border-left: 1px solid #2878c7;
+      // }
+      // td:last-child {
+      //   border-right: 1px solid #2878c7;
+      // }
+      // td {
+      //   border-top: 1px solid #2878c7;
+      //   border-bottom: 1px solid #2878c7;
+      // }
+    }
+  }
+}
+.el-dialog__header{
+  padding: 20px 0px 0px 20px !important;
+  .el-dialog__headerbtn{
+    width: 50px;
+    height: 40px;
+    margin-right: -25px;
+    margin-top: -6px;
+    background: url("../imgs/close.png") no-repeat center 2px;
+    z-index: 2;
+    i{
+      color: #fff;
+    }
+  }
+  .el-dialog__headerbtn:hover{
+    i{
+      color: #E8E8E8;
+    }
+  }
+}
+
+.el-dialog__footer {
+  border: 1px solid #dfe0e5;
+  box-shadow: 2px 0 6px rgba(146,145,145,0.2) !important;
+  padding: 0px 20px !important;
+  background: #f4f6f9 !important;
+  height: 54px;
+  line-height: 54px;
+  border-radius:0px 0px 4px 4px;
+}
+
+.el-button--text{
+  padding: 0px !important;
+  user-select: unset !important;
+}
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+//滚动条的滑块
+::-webkit-scrollbar-thumb {
+  background-color: #D8D8D8;
+  border-radius: 3px;
+}
+.el-input-group__append{
+  text-align: center;
+}

@@ -28,7 +28,7 @@ public class AssessServiceImpl implements AssessService {
             return response;
         }
         response.setSuccess(false);
-        response.setMessage("查询失败");
+        response.setMessage("查询结果为空");
         return response;
     }
 
@@ -42,7 +42,7 @@ public class AssessServiceImpl implements AssessService {
             return response;
         }
         response.setSuccess(false);
-        response.setMessage("查询失败");
+        response.setMessage("查询结果为空");
         return response;
     }
 
@@ -56,7 +56,7 @@ public class AssessServiceImpl implements AssessService {
             return response;
         }
         response.setSuccess(false);
-        response.setMessage("查询失败");
+        response.setMessage("查询结果为空");
         return response;
     }
 
@@ -70,7 +70,7 @@ public class AssessServiceImpl implements AssessService {
             return response;
         }
         response.setSuccess(false);
-        response.setMessage("查询失败");
+        response.setMessage("查询结果为空");
         return response;
     }
 }

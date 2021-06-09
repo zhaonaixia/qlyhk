@@ -1,6 +1,8 @@
 package com.cd.qlyhk.controller;
 
 
+import com.alibaba.fastjson.JSON;
+import com.cd.qlyhk.constants.Constants;
 import com.cd.qlyhk.rest.Response;
 import com.cd.qlyhk.service.AssessService;
 import org.slf4j.Logger;
@@ -33,7 +35,15 @@ public class AssessController {
     @ResponseBody
     public Response finalByArticleAndStatistics(@RequestBody Map map){
         logger.info("*************文章及分享*************");
-        Response response = assessService.finalByArticleAndStatistics(map);
+        Response response = Response.getDefaulTrueInstance();
+        try {
+            response = assessService.finalByArticleAndStatistics(map);
+        } catch (Exception e) {
+            logger.info("查询异常，异常信息为：{}",e.getMessage(),e);
+            response.setCode(Constants.RESPONSE_CODE_FAIL);
+            response.setMessage("查询文章异常");
+        }
+        logger.info("查询成功，返回的数据为：{}"+ JSON.toJSON(response));
         return response;
     }
 
@@ -45,7 +55,16 @@ public class AssessController {
     @GetMapping("/bs.do")
     @ResponseBody
     public Response finalByMorning(@RequestBody Map map){
-        Response response = assessService.finalByMorning(map);
+        logger.info("***********************财锐早报***************************");
+        Response response = Response.getDefaulTrueInstance();
+        try {
+            response = assessService.finalByMorning(map);
+        } catch (Exception e) {
+            logger.info("查询异常，异常信息是：{}",e.getMessage(),e);
+            response.setCode(Constants.RESPONSE_CODE_FAIL);
+            response.setMessage("查询异常");
+        }
+        logger.info("查询成功，返回的数据是={}"+JSON.toJSON(response));
         return response;
     }
 
@@ -57,7 +76,17 @@ public class AssessController {
     @GetMapping("/cs.do")
     @ResponseBody
     public Response finalByUser(@RequestBody Map map){
-        return assessService.finalByUser(map);
+        logger.info("******************会员列表*********************");
+        Response response = Response.getDefaulTrueInstance();
+        try {
+            response = assessService.finalByUser(map);
+        } catch (Exception e) {
+            logger.info("查询异常，异常信息为：{}",e.getMessage(),e);
+            response.setCode(Constants.RESPONSE_CODE_FAIL);
+            response.setMessage("查询异常");
+        }
+        logger.info("查询成功，返回的数据是={}"+JSON.toJSON(response));
+        return response;
     }
 
 
@@ -69,6 +98,16 @@ public class AssessController {
     @GetMapping("/ds.do")
     @ResponseBody
     public Response finalByArticle(@RequestBody Map map){
-        return assessService.finalByArticle(map);
+        logger.info("********************月度热点文章********************");
+        Response response = Response.getDefaulTrueInstance();
+        try {
+            response = assessService.finalByArticle(map);
+        } catch (Exception e) {
+            logger.info("查询异常，异常信息为：{}",e.getMessage(),e);
+            response.setCode(Constants.RESPONSE_CODE_FAIL);
+            response.setMessage("查询异常");
+        }
+        logger.info("查询成功，返回的数据为={}"+JSON.toJSON(response));
+        return response;
     }
 }
